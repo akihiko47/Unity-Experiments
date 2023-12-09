@@ -6,19 +6,41 @@ public static class FunctionLibrary
 
     public delegate Vector3 Function(float u, float v, float t);
 
-    public enum FunctionName { Wave, MultiWave, Ripple, Sphere, Torus, Cone }
-    static Function[] functions = {Wave, MultiWave, Ripple, Sphere, Torus, Cone};
+    public enum FunctionName { Wave, MultiWave, Ripple, Sphere, Torus}
+    static Function[] functions = {Wave, MultiWave, Ripple, Sphere, Torus};
 
     public static Function GetFunction (FunctionName name)
     {
         return functions[(int)name];
     }
 
+    public static Vector3 Morph(float u, float v, float t, Function from, Function to, float progress) {
+        return Vector3.LerpUnclamped(from(u, v, t), to(u, v, t), SmoothStep(0f, 1f, progress));
+    }
+
+    public static FunctionName GetNextFunctionName (FunctionName name)
+    {
+        if ((int)name < functions.Length - 1) {
+            return name + 1;
+        } else {
+            return 0;
+        }
+    }
+
+    public static FunctionName GetNextFunctionNameOtherThan(FunctionName name) {
+        FunctionName choise = (FunctionName)Random.Range(0, functions.Length);
+        if (choise == name) {
+            return 0;
+        } else {
+            return choise;
+        }
+    }
+
     public static Vector3 Wave(float u, float v, float t)
     {
         Vector3 p;
         p.x = u;
-        p.y = Sin(PI * (u + v + t));
+        p.y = 0.5f * Sin(PI * (u + v + t));
         p.z = v;
         return p;
     }
@@ -66,15 +88,6 @@ public static class FunctionLibrary
         p.x = s * Sin(PI * u);
         p.y = r2 * Sin(PI * v);
         p.z = s * Cos(PI * u);
-        return p;
-    }
-
-    public static Vector3 Cone(float u, float v, float t)
-    {
-        Vector3 p;
-        p.x = 1 * (Cos(v) + u * Cos(v / 2) * Cos(v));
-        p.y = 1 * (Sin(v) + u * Cos(v / 2) * Sin(v));
-        p.z = 1 * u * Sin(v / 2);
         return p;
     }
 }

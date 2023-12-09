@@ -446,8 +446,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.27942556, y: 0.24084646, z: -0.07934282, w: -0.9260773}
-  m_LocalPosition: {x: 0.77796555, y: 0.8977375, z: -1.3498745}
+  m_LocalRotation: {x: 0.33028948, y: -0.3338953, z: 0.13364278, w: 0.8726754}
+  m_LocalPosition: {x: 1.4842268, y: 1.8911107, z: -1.6771845}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -484,7 +484,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pointPrefab: {fileID: 805012875723566483, guid: 4bec44734d119f240aaec8d7d1e7417b, type: 3}
   resolution: 100
-  function: 4
+  function: 0
+  functionDuration: 3
+  transitionDuration: 3
+  transitionMode: 1
 --- !u!4 &1017013627
 Transform:
   m_ObjectHideFlags: 0
@@ -654,6 +657,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   display: {fileID: 1909904108}
   sampleDuration: 1
+  displayMode: 0
 --- !u!114 &1909904108
 MonoBehaviour:
   m_ObjectHideFlags: 0
