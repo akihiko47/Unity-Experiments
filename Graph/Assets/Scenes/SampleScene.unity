@@ -463,6 +463,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1017013627}
   - component: {fileID: 1017013626}
+  - component: {fileID: 1017013628}
   m_Layer: 0
   m_Name: Graph
   m_TagString: Untagged
@@ -477,7 +478,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1017013625}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 93735ab13bc6fb045bee8986accabe7f, type: 3}
   m_Name: 
@@ -503,6 +504,26 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1017013628
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1017013625}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d02f4d6328125d4896897ad89b3bac0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  resolution: 10
+  function: 4
+  functionDuration: 1
+  transitionDuration: 0
+  computeShader: {fileID: 7200000, guid: 854af3faf76cd284984162027bd54d1a, type: 3}
+  material: {fileID: 2100000, guid: e58c587c9cbf48640be5ce8d55d69afb, type: 2}
+  mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  transitionMode: 0
 --- !u!1 &1024735017
 GameObject:
   m_ObjectHideFlags: 0
