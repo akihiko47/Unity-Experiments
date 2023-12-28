@@ -5,36 +5,72 @@ public class Fractal : MonoBehaviour{
     [SerializeField, Range(1, 8)]
     int depth = 4;
 
-    private void Start() {
-        name = "Fractal" + depth;
+    [SerializeField]
+    Mesh mesh;
 
-        if (depth <= 1) {
-            return;
+    [SerializeField]
+    Material material;
+
+    static Vector3[] directions = { Vector3.up, Vector3.right, Vector3.left, Vector3.forward, Vector3.back };
+
+    static Quaternion[] rotations = {
+        Quaternion.identity,
+        Quaternion.Euler(0f, 0f, -90f), Quaternion.Euler(0f, 0f, 90f),
+        Quaternion.Euler(90f, 0f, 0f), Quaternion.Euler(-90f, 0f, 0f)
+    };
+
+    struct FractalPart {
+        public Vector3 direction;
+        public Quaternion rotation;
+        public Transform transform;
+    }
+
+    FractalPart[][] parts;
+
+
+    private void Awake() {
+        parts = new FractalPart[depth][];
+
+        int length = 1;
+        for (int i = 0; i < depth; i++) {
+            parts[i] = new FractalPart[length];
+            length *= 5;
         }
 
-        Fractal childA = CreateChild(Vector3.up, Quaternion.identity);
-        Fractal childB = CreateChild(Vector3.right, Quaternion.Euler(0f, 0f, -90f));
-        Fractal childC = CreateChild(Vector3.left, Quaternion.Euler(0f, 0f, 90f));
-        Fractal childD = CreateChild(Vector3.forward, Quaternion.Euler(90f, 0f, 0f));
-        Fractal childE = CreateChild(Vector3.back, Quaternion.Euler(-90f, 0f, 0f));
-
-        childA.transform.SetParent(transform, false);
-        childB.transform.SetParent(transform, false);
-        childC.transform.SetParent(transform, false);
-        childD.transform.SetParent(transform, false);
-        childE.transform.SetParent(transform, false);
+        float scale = 1f;
+        parts[0][0] = CreatePart(0, 0, scale);
+        for (int li = 1; li < parts.Length; li++) {  // level iterator
+            scale *= 0.5f;
+            FractalPart[] levelParts = parts[li];
+            for (int fpi = 0; fpi < levelParts.Length; fpi++) {  // fractal part indicator
+                levelParts[fpi] = CreatePart(li, fpi % 5, scale);
+            }
+        }
     }
 
-    void Update() {
-        transform.Rotate(0f, 22.5f * Time.deltaTime, 0f);
+    private void Update() {
+        for (int li = 1; li < parts.Length; li++) {
+            for (int fpi = 0; fpi < parts[li].Length; fpi++) {
+                Transform parentTransform = parts[li - 1][fpi / 5].transform;
+                FractalPart part = parts[li][fpi];
+
+                part.transform.localRotation = parentTransform.rotation * part.rotation;
+                part.transform.localPosition = parentTransform.localPosition + parentTransform.localRotation * (1.5f * part.transform.localScale.x * part.direction);
+            }
+        }
     }
 
-    Fractal CreateChild(Vector3 direction, Quaternion rotation) {
-        Fractal child = Instantiate(this);
-        child.depth = depth - 1;
-        child.transform.localPosition = 0.75f * direction;
-        child.transform.localScale = 0.5f * Vector3.one;
-        child.transform.rotation = rotation;
-        return child;
+    FractalPart CreatePart(int levelIndex, int childIndex, float scale) {
+        GameObject go = new GameObject("Fractal Part L" + levelIndex + " C" + childIndex);
+        go.transform.SetParent(transform, false);
+        go.AddComponent<MeshFilter>().mesh = mesh;
+        go.AddComponent<MeshRenderer>().material = material;
+        go.transform.localScale = scale * Vector3.one;
+
+        return new FractalPart {
+            direction = directions[childIndex],
+            rotation = rotations[childIndex],
+            transform = go.transform
+        };
     }
 }
