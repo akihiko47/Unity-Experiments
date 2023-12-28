@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Fractal : MonoBehaviour{
+public class Fractal : MonoBehaviour {
 
     [SerializeField, Range(1, 8)]
     int depth = 4;
@@ -49,13 +49,23 @@ public class Fractal : MonoBehaviour{
     }
 
     private void Update() {
+        Quaternion deltaRotation = Quaternion.Euler(0f, 22.5f * Time.deltaTime, 0f);
+        FractalPart rootPart = parts[0][0];
+        rootPart.rotation = rootPart.rotation * deltaRotation;
+        rootPart.transform.localRotation = rootPart.rotation;
+        parts[0][0] = rootPart;
+
         for (int li = 1; li < parts.Length; li++) {
             for (int fpi = 0; fpi < parts[li].Length; fpi++) {
                 Transform parentTransform = parts[li - 1][fpi / 5].transform;
                 FractalPart part = parts[li][fpi];
 
+                part.rotation *= deltaRotation;
                 part.transform.localRotation = parentTransform.rotation * part.rotation;
+
                 part.transform.localPosition = parentTransform.localPosition + parentTransform.localRotation * (1.5f * part.transform.localScale.x * part.direction);
+
+                parts[li][fpi] = part;
             }
         }
     }
@@ -67,10 +77,12 @@ public class Fractal : MonoBehaviour{
         go.AddComponent<MeshRenderer>().material = material;
         go.transform.localScale = scale * Vector3.one;
 
-        return new FractalPart {
+        return new FractalPart
+        {
             direction = directions[childIndex],
             rotation = rotations[childIndex],
             transform = go.transform
         };
     }
 }
+
