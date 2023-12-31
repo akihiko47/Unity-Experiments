@@ -9,7 +9,7 @@ using quaternion = Unity.Mathematics.quaternion;
 
 public class Fractal : MonoBehaviour {
 
-    [SerializeField, Range(1, 8)]
+    [SerializeField, Range(2, 8)]
     int depth = 4;
 
     [SerializeField]
@@ -37,7 +37,8 @@ public class Fractal : MonoBehaviour {
 
     ComputeBuffer[] matricesBuffers;
 
-    static readonly int matricesId = Shader.PropertyToID("_Matrices");
+    static readonly int matricesId = Shader.PropertyToID("_Matrices"),
+                        baseColorId = Shader.PropertyToID("_BaseColor");
 
     static MaterialPropertyBlock propertyBlock;
 
@@ -149,6 +150,7 @@ public class Fractal : MonoBehaviour {
         for (int i = 0; i < matricesBuffers.Length; i++) {
             ComputeBuffer buffer = matricesBuffers[i];
             buffer.SetData(matrices[i]);
+            propertyBlock.SetColor(baseColorId, Color.Lerp(Color.white, Color.red, (i / (matricesBuffers.Length - 1f))));
             propertyBlock.SetBuffer(matricesId, buffer);
             Graphics.DrawMeshInstancedProcedural(mesh, 0, material, bounds, buffer.count, propertyBlock);
         }
