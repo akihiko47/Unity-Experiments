@@ -18,6 +18,9 @@ public class Fractal : MonoBehaviour {
     [SerializeField]
     Material material;
 
+    [SerializeField]
+    Gradient gradient;
+
     static float3[] directions = { up(), right(), left(), forward(), back() };
 
     static quaternion[] rotations = {
@@ -150,7 +153,7 @@ public class Fractal : MonoBehaviour {
         for (int i = 0; i < matricesBuffers.Length; i++) {
             ComputeBuffer buffer = matricesBuffers[i];
             buffer.SetData(matrices[i]);
-            propertyBlock.SetColor(baseColorId, Color.Lerp(Color.white, Color.red, (i / (matricesBuffers.Length - 1f))));
+            propertyBlock.SetColor(baseColorId, gradient.Evaluate(i / (matricesBuffers.Length - 1f)));
             propertyBlock.SetBuffer(matricesId, buffer);
             Graphics.DrawMeshInstancedProcedural(mesh, 0, material, bounds, buffer.count, propertyBlock);
         }
