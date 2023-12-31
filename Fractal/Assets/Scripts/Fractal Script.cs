@@ -151,7 +151,7 @@ public class Fractal : MonoBehaviour {
 
         var bounds = new Bounds(rootPart.worldPosition, 3f * float3(objectScale));
         for (int i = 0; i < matricesBuffers.Length; i++) {
-            ComputeBuffer buffer = matricesBuffers[i];
+            ComputeBuffer buffer = matricesBuffers[i]; 
             buffer.SetData(matrices[i]);
             propertyBlock.SetColor(baseColorId, gradient.Evaluate(i / (matricesBuffers.Length - 1f)));
             propertyBlock.SetBuffer(matricesId, buffer);
