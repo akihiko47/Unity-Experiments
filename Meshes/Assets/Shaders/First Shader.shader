@@ -1,8 +1,11 @@
 Shader "Unlit/First Shader"
 {
     Properties{  // input data
-        _Color("Color", Color) = (0.5, 0.5, 0.5, 1.0)  // some value that can be set (variable name (name in editor, data type) = value)
+        // _Color("Color", Color) = (0.5, 0.5, 0.5, 1.0)  // some value that can be set (variable name (name in editor, data type) = value)
         _UVScale("UV Scale", float) = 1.0
+        _UVOffset("UV Offset", float) = 0.0
+        _ColorA("Color A", Color) = (1.0, 1.0, 1.0, 1.0)
+        _ColorB("Color B", Color) = (1.0, 1.0, 1.0, 1.0)
     }
 
         SubShader{
@@ -16,8 +19,11 @@ Shader "Unlit/First Shader"
 
                 #include "UnityCG.cginc"  // some unity function for efficient work
 
-                float4 _Color;  // get value from properties above
+                // float4 _Color;  // get value from properties above
                 float _UVScale;
+                float _UVOffset;
+                float4 _ColorA;
+                float4 _ColorB;
 
 
                 // filled by Unity
@@ -42,7 +48,7 @@ Shader "Unlit/First Shader"
                     v2f o;
                     o.vertex = UnityObjectToClipPos(v.vertex);  // local space to clip space (function from include)
                     o.normal = mul(unity_ObjectToWorld, v.normal);
-                    o.uv = v.uv * _UVScale;
+                    o.uv = (v.uv + _UVOffset) * _UVScale;
                     return o;
                 }
 
@@ -53,8 +59,12 @@ Shader "Unlit/First Shader"
                 // float4 -> half4 -> fixed4
                 // float4x4 -> half 4x4 -> fixed4x4
                 // and so on...
-                float4 fragment_shader_function (v2f i) : SV_Target {
-                    return float4(i.uv, 0.0, 1.0);
+                float4 fragment_shader_function(v2f i) : SV_Target{
+
+                    // Gradient based on 2 colors and x axis
+                    float4 outColor = lerp(_ColorA, _ColorB, i.uv.x);
+
+                    return outColor;
                 }
 
                 ENDCG
