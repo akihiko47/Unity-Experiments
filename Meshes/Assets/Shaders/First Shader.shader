@@ -6,6 +6,8 @@ Shader "Unlit/First Shader"
         _UVOffset("UV Offset", float) = 0.0
         _ColorA("Color A", Color) = (1.0, 1.0, 1.0, 1.0)
         _ColorB("Color B", Color) = (1.0, 1.0, 1.0, 1.0)
+        _ColorStart("Color Start", float) = 0.0
+        _ColorEnd("Color End", float) = 1.0
     }
 
         SubShader{
@@ -24,6 +26,8 @@ Shader "Unlit/First Shader"
                 float _UVOffset;
                 float4 _ColorA;
                 float4 _ColorB;
+                float _ColorStart;
+                float _ColorEnd;
 
 
                 // filled by Unity
@@ -44,6 +48,10 @@ Shader "Unlit/First Shader"
                     float2 uv : TEXCOORD1; // transfer uv coordinates to channel 1
                 };
 
+                float InverseLerp(float a, float b, float v) {
+                    return (v - a) / (b - a);
+                }
+
                 v2f vertex_shader_function (MeshData v) {
                     v2f o;
                     o.vertex = UnityObjectToClipPos(v.vertex);  // local space to clip space (function from include)
@@ -61,8 +69,10 @@ Shader "Unlit/First Shader"
                 // and so on...
                 float4 fragment_shader_function(v2f i) : SV_Target{
 
-                    // Gradient based on 2 colors and x axis
-                    float4 outColor = lerp(_ColorA, _ColorB, i.uv.x);
+                    float t = InverseLerp(_ColorStart, _ColorEnd, i.uv.xxx);
+                    t = saturate(t); // clamp to 0 or 1
+
+                    float4 outColor = lerp(_ColorA, _ColorB, t);
 
                     return outColor;
                 }
