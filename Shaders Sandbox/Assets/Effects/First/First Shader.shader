@@ -5,6 +5,7 @@ Shader "Effects/First"
         _ColorB("Color B", Color) = (1.0, 1.0, 1.0, 1.0)
         _NLines("Number Of Lines", float) = 5.0
         _LinesSpeed("Speed Of Lines", float) = 1.0
+        _LineWidth("Width Of Lines", float) = 0.5
     }
     SubShader {
         Tags { "RenderType" = "Transparent"
@@ -28,6 +29,7 @@ Shader "Effects/First"
             float4 _ColorB;
             float _NLines;
             float _LinesSpeed;
+            float _LineWidth;
 
             struct MeshData {
                 float4 vertex : POSITION;
@@ -51,9 +53,10 @@ Shader "Effects/First"
 
             float4 frag(v2f i) : SV_Target {
 
-                float offsetX = cos(i.uv.x * 6.28 * 5.0) * (cos(_Time.y) * 0.05);
+                float offsetX = cos(i.uv.x * 6.28 * 10.0) * (cos(_Time.y) * 0.05);
                 float timeOffset = (-_Time.y * _LinesSpeed * 0.1);
                 float4 lines = cos((i.uv.y + timeOffset + offsetX) * 6.28 * _NLines) * 0.5 + 0.5;
+                lines = (lines >= (1 - _LineWidth));
 
                 float4 fade = 1 - i.uv.y;
 
