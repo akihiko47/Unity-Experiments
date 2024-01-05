@@ -1,8 +1,9 @@
 Shader "Effects/Waves" {
 
-    Properties {
+    Properties{
         _TexLow("Low Texture", 2D) = "black"
         _TexHigh("High Texture", 2D) = "white"
+        _Border("Border", float) = 0.5
     }
 
     SubShader {
@@ -18,6 +19,7 @@ Shader "Effects/Waves" {
 
             sampler2D _TexLow;
             sampler2D _TexHigh;
+            float _Border;
 
             struct MeshData {
                 float4 vertex : POSITION;
@@ -48,8 +50,8 @@ Shader "Effects/Waves" {
             }
 
             fixed4 frag(v2f i) : SV_Target{
-                float4 lowTex = tex2D(_TexLow, i.uv) * (1 - saturate(i.localPos.y));
-                float4 highTex = tex2D(_TexHigh, i.uv) * saturate(i.localPos.y);
+                float4 lowTex = tex2D(_TexLow, i.uv) * (i.localPos.y < _Border);
+                float4 highTex = tex2D(_TexHigh, i.uv) * (i.localPos.y > _Border);
                 return lowTex + highTex;
             }
 
