@@ -14,7 +14,7 @@ public class TransformationGrid : MonoBehaviour
 
     Matrix4x4 transformation;
 
-    private void Awake() {
+    private void Start() {
         grid = new Transform[gridResolution * gridResolution * gridResolution];
         transformations = new List<Transformation>();
 

@@ -1,0 +1,3 @@
+Shader "Effects/CatLikeCodingFirst" {
+	
+}
