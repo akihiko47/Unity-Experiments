@@ -2,6 +2,7 @@ Shader "Effects/CatLikeCodingFirst" {
 
 	Properties{
 		_Tint("Tint", Color) = (1.0, 1.0, 1.0, 1.0)
+		_MainTex("Texture", 2D) = "white" {}
 	}
 
 	SubShader{
@@ -16,6 +17,7 @@ Shader "Effects/CatLikeCodingFirst" {
 			#include "UnityCG.cginc"
 
 			float4 _Tint;
+			sampler2D _MainTex;
 
 			struct Interpolators {
 				float4 position : SV_POSITION;
@@ -35,7 +37,7 @@ Shader "Effects/CatLikeCodingFirst" {
 			};
 
 			float4 frag(Interpolators i) : SV_TARGET {
-				return float4(i.uv, 1.0, 1.0);
+				return tex2D(_MainTex, i.uv) * _Tint;
 			}
 
 			ENDCG
