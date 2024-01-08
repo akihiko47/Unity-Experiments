@@ -18,6 +18,7 @@ Shader "Effects/CatLikeCodingFirst" {
 
 			float4 _Tint;
 			sampler2D _MainTex;
+			float4 _MainTex_ST;
 
 			struct Interpolators {
 				float4 position : SV_POSITION;
@@ -31,7 +32,7 @@ Shader "Effects/CatLikeCodingFirst" {
 
 			Interpolators vert(VertexData v) {
 				Interpolators i;
-				i.uv = v.uv;
+				i.uv = v.uv * _MainTex_ST.xy + _MainTex_ST.zw;
 				i.position = UnityObjectToClipPos(v.position);
 				return i;
 			};
