@@ -1,15 +1,21 @@
 Shader "Effects/HealthBar" 
 {
     Properties{
-        _Health("Health", float) = 0.5
+        _Health("Health", Range(0.0, 1.0)) = 0.5
         _ColorLow("Color Low", Color) = (1.0, 0.0, 0.0, 1.0)
         _ColorHigh("Color Low", Color) = (0.0, 1.0, 0.0, 1.0)
+        _BorderColor("Border Color", Color) = (1.0, 1.0, 1.0, 1.0)
+        _BorderSize("Border Size", Range(0.0, 0.1)) = 0.01
+        _MainTex("Health Texture", 2D) = "white" {}
     }
 
         SubShader{
-            Tags { "RenderType" = "Opaque" }
+            Tags { "RenderType" = "Transparent"
+                    "Queue" = "Transparent"}
 
             Pass {
+
+            Blend SrcAlpha OneMinusSrcAlpha
 
             CGPROGRAM
 
@@ -19,8 +25,11 @@ Shader "Effects/HealthBar"
             #include "UnityCG.cginc"
 
             float _Health;
+            float _BorderSize;
             float4 _ColorLow;
             float4 _ColorHigh;
+            float4 _BorderColor;
+            sampler2D _MainTex;
 
             struct MeshData {
                 float4 vertex : POSITION;
@@ -46,8 +55,10 @@ Shader "Effects/HealthBar"
             fixed4 frag(v2f i) : SV_Target{
                 float4 healthMask = (i.uv.x < _Health);
                 float4 healthColor = lerp(_ColorLow, _ColorHigh, saturate(InvLerp(0.2, 0.8, _Health)));
+                float4 pulsate = (sin(_Time.y * 5.0) * 0.5 + 0.5) * float4(1.0, 0.0, 0.0, 0.2) * (_Health < 0.2);
+                float4 border = _BorderColor * (i.uv.x < _BorderSize) + (i.uv.x > 1 - _BorderSize) + (i.uv.y < _BorderSize) + (i.uv.y > 1 - _BorderSize);
 
-                float4 outColor = healthMask * healthColor;
+                float4 outColor = (healthMask * tex2D(_MainTex, i.uv)) + pulsate + border;
                 return outColor;
             }
 
