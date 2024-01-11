@@ -5,7 +5,7 @@ Shader "Effects/HealthBar"
         _ColorLow("Color Low", Color) = (1.0, 0.0, 0.0, 1.0)
         _ColorHigh("Color Low", Color) = (0.0, 1.0, 0.0, 1.0)
         _BorderColor("Border Color", Color) = (1.0, 1.0, 1.0, 1.0)
-        _BorderSize("Border Size", Range(0.0, 0.1)) = 0.01
+        _BorderSize("Border Size", Range(0.0, 0.5)) = 0.1
         _MainTex("Health Texture", 2D) = "white" {}
     }
 
@@ -54,12 +54,22 @@ Shader "Effects/HealthBar"
             }
 
             fixed4 frag(v2f i) : SV_Target{
+                // rounded corners
+                float2 coords = float2(i.uv.x * 8.0, i.uv.y);
+                float2 dotOnLine = float2(clamp(coords.x, 0.5, 7.5), 0.5);
+
+                float sdf = distance(coords, dotOnLine) - 0.5;
+                clip(-sdf);
+
+                float borderMask = abs(sdf) > _BorderSize;
+
+                // health texture
                 float healthMask = (i.uv.x < _Health);
-                //float3 healthColor = lerp(_ColorLow, _ColorHigh, saturate(InvLerp(0.2, 0.8, _Health)));
-                float pulsate = (sin(_Time.y * 5.0) * 0.3) * (_Health < 0.2) + 1.0;
+                float pulsate = (sin(_Time.y * 5.0) * 0.5) * (_Health < 0.2) + 1.0;
                 float3 healthTexture = tex2D(_MainTex, float2(_Health, i.uv.y)).rgb;
 
-                float4 outColor = float4(healthTexture * pulsate, healthMask);
+                float4 healthLine = float4(healthTexture * pulsate, healthMask);
+                float4 outColor = (healthLine * borderMask) + ((1 - borderMask) * _BorderColor);
                 return outColor;
             }
 

@@ -6,9 +6,12 @@ Shader "Effects/SDF" {
     }
 
     SubShader{
-        Tags { "RenderType" = "Opaque" }
+        Tags { "RenderType" = "Transparent" "Queue" = "Transparent"}
 
         Pass {
+
+            Blend SrcAlpha OneMinusSrcAlpha
+
             CGPROGRAM
 
             #pragma vertex vert
@@ -46,7 +49,7 @@ Shader "Effects/SDF" {
                 i.uv.x += sin(i.uv.y * 15.0 + _Time.y) * 0.05;
                 float dist_mask = abs(length(i.uv) - 0.5) < ((sin(_Time.y) * 0.2 + 1.0) * 0.1);
 
-                float4 col = float4(wave * dist_mask, 1.0);
+                float4 col = float4(wave * dist_mask, dist_mask);
                 return col;
             }
 
