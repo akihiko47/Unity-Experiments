@@ -9,12 +9,13 @@ Shader "Effects/HealthBar"
         _MainTex("Health Texture", 2D) = "white" {}
     }
 
-        SubShader{
-            Tags { "RenderType" = "Transparent"
-                    "Queue" = "Transparent"}
+    SubShader{
+        Tags { "RenderType" = "Transparent"
+                "Queue" = "Transparent"}
 
-            Pass {
+        Pass {
 
+            ZWrite Off
             Blend SrcAlpha OneMinusSrcAlpha
 
             CGPROGRAM
@@ -53,12 +54,12 @@ Shader "Effects/HealthBar"
             }
 
             fixed4 frag(v2f i) : SV_Target{
-                float4 healthMask = (i.uv.x < _Health);
-                float4 healthColor = lerp(_ColorLow, _ColorHigh, saturate(InvLerp(0.2, 0.8, _Health)));
-                float4 pulsate = (sin(_Time.y * 5.0) * 0.5 + 0.5) * float4(1.0, 0.0, 0.0, 0.2) * (_Health < 0.2);
-                float4 border = _BorderColor * (i.uv.x < _BorderSize) + (i.uv.x > 1 - _BorderSize) + (i.uv.y < _BorderSize) + (i.uv.y > 1 - _BorderSize);
+                float healthMask = (i.uv.x < _Health);
+                //float3 healthColor = lerp(_ColorLow, _ColorHigh, saturate(InvLerp(0.2, 0.8, _Health)));
+                float pulsate = (sin(_Time.y * 5.0) * 0.3) * (_Health < 0.2) + 1.0;
+                float3 healthTexture = tex2D(_MainTex, float2(_Health, i.uv.y)).rgb;
 
-                float4 outColor = (healthMask * tex2D(_MainTex, i.uv)) + pulsate + border;
+                float4 outColor = float4(healthTexture * pulsate, healthMask);
                 return outColor;
             }
 
