@@ -47,7 +47,9 @@ Shader "Effects/SDF" {
 
                 i.uv = i.uv * 2.0 - 1.0;
                 i.uv.x += sin(i.uv.y * 15.0 + _Time.y) * 0.05;
-                float dist_mask = abs(length(i.uv) - 0.5) < ((sin(_Time.y) * 0.2 + 1.0) * 0.1);
+                float dist_mask = (length(i.uv) - 0.5);
+
+                dist_mask = 1 - saturate(dist_mask / fwidth(dist_mask));
 
                 float4 col = float4(wave * dist_mask, dist_mask);
                 return col;

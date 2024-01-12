@@ -61,15 +61,16 @@ Shader "Effects/HealthBar"
                 float sdf = distance(coords, dotOnLine) - 0.5;
                 clip(-sdf);
 
-                float borderMask = abs(sdf) > _BorderSize;
+                float borderMask = sdf + _BorderSize;
+                borderMask = 1 - saturate((borderMask / fwidth(borderMask)));
 
                 // health texture
                 float healthMask = (i.uv.x < _Health);
                 float pulsate = (sin(_Time.y * 5.0) * 0.5) * (_Health < 0.2) + 1.0;
                 float3 healthTexture = tex2D(_MainTex, float2(_Health, i.uv.y)).rgb;
 
-                float4 healthLine = float4(healthTexture * pulsate, healthMask);
-                float4 outColor = (healthLine * borderMask) + ((1 - borderMask) * _BorderColor);
+                float4 healthLine = float4(healthTexture * pulsate, healthMask) * borderMask;
+                float4 outColor = (healthLine * (healthLine.w * borderMask.x)) + ((1-borderMask) * _BorderColor);
                 return outColor;
             }
 
