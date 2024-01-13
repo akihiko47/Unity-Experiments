@@ -3,7 +3,7 @@ Shader "Effects/First Light" {
 	Properties{
 		_Tint("Tint", Color) = (1.0, 1.0, 1.0, 1.0)
 		_Albedo("Albedo", 2D) = "white" {}
-		_Smoothness("Smoothness", Range(0.0, 1.0)) = 0.5
+		_Gloss("Glossiness", float) = 1.0
 		_SpecularTint("Specular", Color) = (0.5, 0.5, 0.5)
 	}
 
@@ -21,7 +21,7 @@ Shader "Effects/First Light" {
 			float4 _Tint;
 			sampler2D _Albedo;
 			float4 _Albedo_ST;
-			float _Smoothness;
+			float _Gloss;
 			float4 _SpecularTint;
 
 			struct Interpolators {
@@ -49,15 +49,31 @@ Shader "Effects/First Light" {
 			float4 frag(Interpolators i) : SV_TARGET {
 				i.normal = normalize(i.normal);
 
-				float3 lightDir = _WorldSpaceLightPos0.xyz;
-				float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
-				float3 halfVector = normalize(lightDir + viewDir);
 				float3 lightColor = _LightColor0.rgb;
 				float3 albedo = tex2D(_Albedo, i.uv) * _Tint;
 
-				float3 specular = _SpecularTint.rgb * lightColor * pow(DotClamped(halfVector, i.normal), _Smoothness * 100.0);
-				float3 diffuse = saturate(dot(lightDir, i.normal)) * lightColor * albedo;
-				return float4(diffuse + specular, 1.0);
+				// diffuse light
+				float3 lightDir = _WorldSpaceLightPos0.xyz;
+				float3 lambert = saturate(dot(lightDir, i.normal));
+				float3 diffuse = lambert * lightColor * albedo;
+
+				// specular light - PHONG
+				/*float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
+				float3 reflectDir = reflect(-lightDir, i.normal);
+
+				float specular = saturate(dot(viewDir, reflectDir));
+				specular = pow(specular, _Gloss);*/
+
+				// specular light - BLINN-PHONG
+				float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
+				float3 halfVector = normalize(lightDir + viewDir);
+
+				float3 specular = dot(i.normal, halfVector);	
+				specular = specular * (lambert > 0.0);  // cutting of bugs when looking from behind
+				specular = pow(specular, _Gloss);
+				specular = specular * lightColor;
+
+				return float4(specular, 1.0);
 			}
 
 			ENDCG
