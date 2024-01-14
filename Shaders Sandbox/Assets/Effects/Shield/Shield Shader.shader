@@ -12,7 +12,7 @@ Shader "Effects/Shield" {
         Tags { "RenderType" = "Transparent" "Queue" = "Transparent"}
 
         Pass {
-
+            Cull Off
             ZWrite Off
             Blend One One
 
@@ -58,14 +58,18 @@ Shader "Effects/Shield" {
                 float3 lookDir = normalize(_WorldSpaceCameraPos - i.worldPos);
 
                 // FRESNEL EFFECT
-                float4 fresnel = pow(1 - saturate(dot(i.normal, lookDir)), 8.0) * _FresnelInt * _FresnelColor;
+                float fresnelDot = dot(i.normal, lookDir);
+                float fresnel = pow(1 - saturate(fresnelDot), 4.0) * _FresnelInt * (fresnelDot >= 0.0);
+                float3 fresnelColor = fresnel * lerp(_FresnelColor.rgb, fixed3(1.0, 1.0, 1.0), pow(fresnel, 2.0));  // make color
+
 
                 // WAVES
-                float4 waves = (sin(i.uv.y * 6.28 * _LinesNum - _Time.y * _LinesSpeed) * 0.5 + 0.5) * _LinesColor;
+                float wavesMask = (sin(i.uv.y * 6.28 * _LinesNum - _Time.y * _LinesSpeed) * 0.5 + 0.5);
+                float3 waves = _LinesColor * wavesMask;
 
                 // MAIN COLOR
-                float4 color = _Color * pow(i.uv.y, 5.0);
-                return float4(fresnel + waves + color);
+                float3 color = _Color.rgb * pow(i.uv.y, 8.0) * (1 - wavesMask);
+                return float4(fresnelColor + waves + color, 1.0);
             }
 
             ENDCG

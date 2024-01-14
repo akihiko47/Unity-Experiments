@@ -4,7 +4,7 @@ Shader "Effects/First Light" {
 		_Tint("Tint", Color) = (1.0, 1.0, 1.0, 1.0)
 		_Albedo("Albedo", 2D) = "white" {}
 		_Gloss("Glossiness", float) = 1.0
-		_SpecularTint("Specular Tint", Color) = (0.5, 0.5, 0.5)
+		_Metallic("Metallic", Range(0.0, 1.0)) = 0.0
 		_Fresnel("Fresnel Effect", Range(0.0, 1.0)) = 0.0
 	}
 
@@ -22,8 +22,7 @@ Shader "Effects/First Light" {
 			float4 _Tint;
 			sampler2D _Albedo;
 			float4 _Albedo_ST;
-			float _Gloss, _Fresnel;
-			float4 _SpecularTint;
+			float _Gloss, _Fresnel, _Metallic;
 
 			struct Interpolators {
 				float4 position : SV_POSITION;
@@ -53,6 +52,10 @@ Shader "Effects/First Light" {
 				float3 lightColor = _LightColor0.rgb;
 				float3 albedo = tex2D(_Albedo, i.uv) * _Tint;
 
+				// energy conservation
+				float3 specularTint = albedo * _Metallic;
+				albedo = albedo * (1 - _Metallic);
+
 				// diffuse light
 				float3 lightDir = _WorldSpaceLightPos0.xyz;
 				float3 lambert = saturate(dot(lightDir, i.normal));
@@ -72,7 +75,8 @@ Shader "Effects/First Light" {
 				float3 specular = dot(i.normal, halfVector);	
 				specular = specular * (lambert > 0.0);  // cutting of bugs when looking from behind
 				specular = pow(specular, _Gloss);
-				specular = specular * lightColor * _SpecularTint.rgb;
+				specular = specular * lightColor * specularTint;
+
 
 				float3 fresnel = pow(1 - saturate(dot(i.normal, viewDir)), 5.0) * _Fresnel;
 
