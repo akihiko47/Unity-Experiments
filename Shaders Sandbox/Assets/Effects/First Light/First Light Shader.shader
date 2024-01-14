@@ -4,7 +4,8 @@ Shader "Effects/First Light" {
 		_Tint("Tint", Color) = (1.0, 1.0, 1.0, 1.0)
 		_Albedo("Albedo", 2D) = "white" {}
 		_Gloss("Glossiness", float) = 1.0
-		_SpecularTint("Specular", Color) = (0.5, 0.5, 0.5)
+		_SpecularTint("Specular Tint", Color) = (0.5, 0.5, 0.5)
+		_Fresnel("Fresnel Effect", Range(0.0, 1.0)) = 0.0
 	}
 
 	SubShader{
@@ -21,7 +22,7 @@ Shader "Effects/First Light" {
 			float4 _Tint;
 			sampler2D _Albedo;
 			float4 _Albedo_ST;
-			float _Gloss;
+			float _Gloss, _Fresnel;
 			float4 _SpecularTint;
 
 			struct Interpolators {
@@ -71,9 +72,11 @@ Shader "Effects/First Light" {
 				float3 specular = dot(i.normal, halfVector);	
 				specular = specular * (lambert > 0.0);  // cutting of bugs when looking from behind
 				specular = pow(specular, _Gloss);
-				specular = specular * lightColor;
+				specular = specular * lightColor * _SpecularTint.rgb;
 
-				return float4(specular, 1.0);
+				float3 fresnel = pow(1 - saturate(dot(i.normal, viewDir)), 5.0) * _Fresnel;
+
+				return float4(specular + diffuse + fresnel, 1.0);
 			}
 
 			ENDCG
