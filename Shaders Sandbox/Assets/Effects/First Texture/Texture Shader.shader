@@ -1,3 +1,5 @@
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
 Shader "Effects/Texture"
 {
     Properties {
@@ -37,7 +39,7 @@ Shader "Effects/Texture"
 
                 o.vertex = UnityObjectToClipPos(v.vertex);
 
-                o.screenPos = mul(UNITY_MATRIX_V, v.vertex);
+                o.screenPos = UnityObjectToClipPos(v.vertex);
 
                 o.uv = v.uv;
                 return o;

@@ -6,9 +6,10 @@ Shader "Effects/Shield" {
         _LinesNum("Number of lines", float) = 10.0
         _LinesSpeed("Speed of lines", float) = 5.0
         _LinesColor("Color of lines", Color) = (1.0, 1.0, 1.0, 1.0)
+        _ShieldTex("Shield Texture", 2D) = "black" {}
     }
 
-    SubShader{
+        SubShader{
         Tags { "RenderType" = "Transparent" "Queue" = "Transparent"}
 
         Pass {
@@ -24,6 +25,7 @@ Shader "Effects/Shield" {
 
             #include "UnityCG.cginc"
 
+            sampler2D _ShieldTex;
             float4 _Color;
             float4 _FresnelColor;
             float4 _LinesColor;
@@ -57,15 +59,15 @@ Shader "Effects/Shield" {
 
                 float3 lookDir = normalize(_WorldSpaceCameraPos - i.worldPos);
 
+                // WAVES
+                float hex = sin((tex2D(_ShieldTex, i.uv * float2(15.0, 10.0)) + _Time.y * 0.3) * 5.0) * 0.5 + 0.5;
+                float wavesMask = (sin(i.uv.y * 6.28 * _LinesNum + _Time.y * _LinesSpeed) * 0.5 + 0.5);
+                float3 waves = _LinesColor * wavesMask * hex;
+
                 // FRESNEL EFFECT
                 float fresnelDot = dot(i.normal, lookDir);
                 float fresnel = pow(1 - saturate(fresnelDot), 4.0) * _FresnelInt * (fresnelDot >= 0.0);
                 float3 fresnelColor = fresnel * lerp(_FresnelColor.rgb, fixed3(1.0, 1.0, 1.0), pow(fresnel, 2.0));  // make color
-
-
-                // WAVES
-                float wavesMask = (sin(i.uv.y * 6.28 * _LinesNum - _Time.y * _LinesSpeed) * 0.5 + 0.5);
-                float3 waves = _LinesColor * wavesMask;
 
                 // MAIN COLOR
                 float3 color = _Color.rgb * pow(i.uv.y, 8.0) * (1 - wavesMask);
