@@ -9,6 +9,10 @@ Shader "Effects/Cursed Shadows" {
         Tags { "RenderType"="Opaque" }
 
         Pass {
+            Tags {
+                "LightMode" = "ForwardBase"
+            }
+
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag

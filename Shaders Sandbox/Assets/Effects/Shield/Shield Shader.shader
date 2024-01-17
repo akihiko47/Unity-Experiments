@@ -6,7 +6,7 @@ Shader "Effects/Shield" {
         _LinesNum("Number of lines", float) = 10.0
         _LinesSpeed("Speed of lines", float) = 5.0
         _LinesColor("Color of lines", Color) = (1.0, 1.0, 1.0, 1.0)
-        _ShieldTex("Shield Texture", 2D) = "black" {}
+        [NoScaleOffset] _ShieldTex("Shield Texture", 2D) = "black" {}
     }
 
         SubShader{
