@@ -33,39 +33,46 @@ float4 frag(Interpolators i) : SV_TARGET{
 
 	float3 lightColor = _LightColor0.rgb;
 	float3 albedo = tex2D(_Albedo, i.uv) * _Tint;
+	float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
+	float3 lightDir = _WorldSpaceLightPos0.xyz;
 
-	// energy conservation
-	//float3 specularTint = albedo * _Metallic;
-	//albedo = albedo * (1 - _Metallic);
+	float3 fresnel = pow(1 - saturate(dot(i.normal, viewDir)), 5.0) * _Fresnel;
+
 	float3 specularTint;
 	float oneMinusReflectivity;
 	albedo = DiffuseAndSpecularFromMetallic(
 		albedo, _Metallic, specularTint, oneMinusReflectivity
 	);
 
-	// diffuse light
-	float3 lightDir = _WorldSpaceLightPos0.xyz;
-	float3 lambert = saturate(dot(lightDir, i.normal));
-	float3 diffuse = lambert * lightColor * albedo;
 
-	// specular light - PHONG
-	/*float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
-	float3 reflectDir = reflect(-lightDir, i.normal);
+	// ===== BLING PHONG LIGHT MODEL =====
 
-	float specular = saturate(dot(viewDir, reflectDir));
-	specular = pow(specular, _Gloss);*/
+	//   energy conservation
+	//float3 specularTint = albedo * _Metallic;
+	//albedo = albedo * (1 - _Metallic);
 
-	// specular light - BLINN-PHONG
-	float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
-	float3 halfVector = normalize(lightDir + viewDir);
+	//   diffuse light
+	//float3 lambert = saturate(dot(lightDir, i.normal));
+	//float3 diffuse = lambert * lightColor * albedo;
 
-	float3 specular = dot(i.normal, halfVector);
-	specular = specular * (lambert > 0.0);  // cutting of bugs when looking from behind
-	specular = pow(specular, _Gloss);
-	specular = specular * lightColor * specularTint;
+	//   specular light - PHONG
+	//float3 reflectDir = reflect(-lightDir, i.normal);
 
+	//float specular = saturate(dot(viewDir, reflectDir));
+	//specular = pow(specular, _Gloss);
 
-	float3 fresnel = pow(1 - saturate(dot(i.normal, viewDir)), 5.0) * _Fresnel;
+	//   specular light - BLINN-PHONG
+	
+	//float3 halfVector = normalize(lightDir + viewDir);
+	//float3 specular = dot(i.normal, halfVector);
+	//specular = specular * (lambert > 0.0);  // cutting of bugs when looking from behind
+	//specular = pow(specular, _Gloss);
+	//specular = specular * lightColor * specularTint;
+
+	//return float4(specular + diffuse + fresnel, 1.0);  // BLINN-PHONG lighting model (with fresnel)
+
+	// ===== BLING PHONG LIGHT MODEL =====
+
 
 	UnityLight light;
 	#if defined(POINT) || defined(SPOT) || defined(POINT_COOKIE)
@@ -86,6 +93,4 @@ float4 frag(Interpolators i) : SV_TARGET{
 		i.normal, viewDir,
 		light, indirectLight
 	);
-
-	// return float4(specular + diffuse + fresnel, 1.0);  // BLINN-PHONG lighting model (with fresnel)
 }
