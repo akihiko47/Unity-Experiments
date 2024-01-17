@@ -68,7 +68,11 @@ float4 frag(Interpolators i) : SV_TARGET{
 	float3 fresnel = pow(1 - saturate(dot(i.normal, viewDir)), 5.0) * _Fresnel;
 
 	UnityLight light;
-	light.dir = normalize(_WorldSpaceLightPos0.xyz - i.worldPos);
+	#if defined(POINT) || defined(SPOT) || defined(POINT_COOKIE)
+		light.dir = normalize(_WorldSpaceLightPos0.xyz - i.worldPos);
+	#else 
+		light.dir = _WorldSpaceLightPos0.xyz;
+	#endif
 	UNITY_LIGHT_ATTENUATION(attenuation, 0, i.worldPos);
 	light.color = lightColor * attenuation;
 	light.ndotl = DotClamped(i.normal, lightDir);
