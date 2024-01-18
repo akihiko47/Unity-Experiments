@@ -18,6 +18,7 @@ Shader "Effects/First Light" {
 			CGPROGRAM
 
 			#pragma multi_compile _ VERTEXLIGHT_ON
+			#define FORWARD_BASE_PASS
 
 			#pragma vertex vert
 			#pragma fragment frag

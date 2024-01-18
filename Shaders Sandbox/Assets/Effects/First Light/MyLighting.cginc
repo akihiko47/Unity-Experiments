@@ -43,6 +43,10 @@ UnityIndirect CreateIndirectLight(Interpolators i) {
 		indirectLight.diffuse = i.vertexLightColor;
 	#endif
 
+	#ifdef FORWARD_BASE_PASS
+		indirectLight.diffuse += max(0, ShadeSH9(float4(i.normal, 1.0)));
+	#endif
+
 	return indirectLight;
 }
 
