@@ -17,6 +17,8 @@ Shader "Effects/First Light" {
 
 			CGPROGRAM
 
+			#pragma multi_compile _ VERTEXLIGHT_ON
+
 			#pragma vertex vert
 			#pragma fragment frag
 			#pragma target 3.0

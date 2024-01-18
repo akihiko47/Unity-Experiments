@@ -11,6 +11,10 @@ struct Interpolators {
 	float2 uv : TEXCOORD0;
 	float3 normal : TEXCOORD1;
 	float3 worldPos : TEXCOORD2;
+
+	#ifdef VERTEXLIGHT_ON
+		float3 vertexLightColor : TEXCOORD3;
+	#endif
 };
 
 struct VertexData {
@@ -19,12 +23,36 @@ struct VertexData {
 	float3 normal : NORMAL;
 };
 
+void ComputeVertexLightColor(inout Interpolators i) {
+	#ifdef VERTEXLIGHT_ON 
+		i.vertexLightColor = Shade4PointLights(
+			unity_4LightPosX0, unity_4LightPosY0, unity_4LightPosZ0,
+			unity_LightColor[0].rgb, unity_LightColor[1].rgb,
+			unity_LightColor[2].rgb, unity_LightColor[3].rgb,
+			unity_4LightAtten0, i.worldPos, i.normal
+		);
+	#endif
+}
+
+UnityIndirect CreateIndirectLight(Interpolators i) {
+	UnityIndirect indirectLight;
+	indirectLight.diffuse = 0;
+	indirectLight.specular = 0;
+
+	#ifdef VERTEXLIGHT_ON
+		indirectLight.diffuse = i.vertexLightColor;
+	#endif
+
+	return indirectLight;
+}
+
 Interpolators vert(VertexData v) {
 	Interpolators i;
 	i.uv = v.uv * _Albedo_ST.xy + _Albedo_ST.zw;
 	i.position = UnityObjectToClipPos(v.position);
 	i.worldPos = mul(unity_ObjectToWorld, v.position);
 	i.normal = UnityObjectToWorldNormal(v.normal);
+	ComputeVertexLightColor(i);
 	return i;
 };
 
@@ -74,6 +102,9 @@ float4 frag(Interpolators i) : SV_TARGET{
 	// ===== BLING PHONG LIGHT MODEL =====
 
 
+
+	// ===== UNITY PBS LIGHT MODEL =====
+
 	UnityLight light;
 	#if defined(POINT) || defined(SPOT) || defined(POINT_COOKIE)
 		light.dir = normalize(_WorldSpaceLightPos0.xyz - i.worldPos);
@@ -83,14 +114,11 @@ float4 frag(Interpolators i) : SV_TARGET{
 	UNITY_LIGHT_ATTENUATION(attenuation, 0, i.worldPos);
 	light.color = lightColor * attenuation;
 	light.ndotl = DotClamped(i.normal, lightDir);
-	UnityIndirect indirectLight;
-	indirectLight.diffuse = 0;
-	indirectLight.specular = 0;
 
 	return UNITY_BRDF_PBS(
 		albedo, specularTint,
 		oneMinusReflectivity, _Gloss,
 		i.normal, viewDir,
-		light, indirectLight
+		light, CreateIndirectLight(i)
 	);
 }
