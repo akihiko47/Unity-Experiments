@@ -3,6 +3,7 @@ Shader "Effects/First Light" {
 	Properties{
 		_Tint("Tint", Color) = (1.0, 1.0, 1.0, 1.0)
 		_Albedo("Albedo", 2D) = "white" {}
+		[NoScaleOffset] _HeightMap("Height Map", 2D) = "black" {}
 		_Gloss("Glossiness", Range(0.0, 1.0)) = 0.5
 		[Gamma] _Metallic("Metallic", Range(0.0, 1.0)) = 0.0
 		_Fresnel("Fresnel Effect", Range(0.0, 1.0)) = 0.0

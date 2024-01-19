@@ -2,8 +2,8 @@
 #include "AutoLight.cginc"
 
 float4 _Tint;
-sampler2D _Albedo;
-float4 _Albedo_ST;
+sampler2D _Albedo, _HeightMap;
+float4 _Albedo_ST, _HeightMap_TexelSize;
 float _Gloss, _Fresnel, _Metallic;
 
 struct Interpolators {
@@ -22,6 +22,21 @@ struct VertexData {
 	float2 uv : TEXCOORD0;
 	float3 normal : NORMAL;
 };
+
+void InitializeFragmentNormal(inout Interpolators i) {
+	i.normal = float3(0.0, 1.0, 0.0);
+
+	float2 du = float2(_HeightMap_TexelSize.x * 0.5, 0.0);
+	float u1 = tex2D(_HeightMap, i.uv - du);
+	float u2 = tex2D(_HeightMap, i.uv + du);
+
+	float2 dv = float2(0.0, _HeightMap_TexelSize.y * 0.5);
+	float v1 = tex2D(_HeightMap, i.uv - dv);
+	float v2 = tex2D(_HeightMap, i.uv + dv);
+
+	i.normal = float3(u1 - u2, 0.5, v1 - v2);
+	i.normal = normalize(i.normal);
+}
 
 void ComputeVertexLightColor(inout Interpolators i) {
 	#ifdef VERTEXLIGHT_ON 
@@ -61,10 +76,11 @@ Interpolators vert(VertexData v) {
 };
 
 float4 frag(Interpolators i) : SV_TARGET{
-	i.normal = normalize(i.normal);
+	InitializeFragmentNormal(i);
 
 	float3 lightColor = _LightColor0.rgb;
 	float3 albedo = tex2D(_Albedo, i.uv) * _Tint;
+
 	float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
 	float3 lightDir = _WorldSpaceLightPos0.xyz;
 
