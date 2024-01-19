@@ -2,9 +2,9 @@
 #include "AutoLight.cginc"
 
 float4 _Tint;
-sampler2D _Albedo, _HeightMap;
-float4 _Albedo_ST, _HeightMap_TexelSize;
-float _Gloss, _Fresnel, _Metallic;
+sampler2D _Albedo, _NormalMap;
+float4 _Albedo_ST;
+float _Gloss, _Fresnel, _Metallic, _BumpScale;
 
 struct Interpolators {
 	float4 position : SV_POSITION;
@@ -24,17 +24,8 @@ struct VertexData {
 };
 
 void InitializeFragmentNormal(inout Interpolators i) {
-	i.normal = float3(0.0, 1.0, 0.0);
-
-	float2 du = float2(_HeightMap_TexelSize.x * 0.5, 0.0);
-	float u1 = tex2D(_HeightMap, i.uv - du);
-	float u2 = tex2D(_HeightMap, i.uv + du);
-
-	float2 dv = float2(0.0, _HeightMap_TexelSize.y * 0.5);
-	float v1 = tex2D(_HeightMap, i.uv - dv);
-	float v2 = tex2D(_HeightMap, i.uv + dv);
-
-	i.normal = float3(u1 - u2, 0.5, v1 - v2);
+	i.normal = UnpackScaleNormal(tex2D(_NormalMap, i.uv), _BumpScale);
+	i.normal = i.normal.xzy;
 	i.normal = normalize(i.normal);
 }
 
