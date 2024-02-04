@@ -2,13 +2,14 @@
 #include "AutoLight.cginc"
 
 float4 _Tint;
-sampler2D _Albedo, _NormalMap;
-float4 _Albedo_ST;
-float _Gloss, _Fresnel, _Metallic, _BumpScale;
+sampler2D _Albedo, _NormalMap, _DetailNormalMap;
+sampler2D _DetailTex;
+float4 _Albedo_ST, _DetailTex_ST;
+float _Gloss, _Fresnel, _Metallic, _BumpScale, _DetailBumpScale;
 
 struct Interpolators {
 	float4 position : SV_POSITION;
-	float2 uv : TEXCOORD0;
+	float4 uv : TEXCOORD0;
 	float3 normal : TEXCOORD1;
 	float3 worldPos : TEXCOORD2;
 
@@ -24,7 +25,9 @@ struct VertexData {
 };
 
 void InitializeFragmentNormal(inout Interpolators i) {
-	i.normal = UnpackScaleNormal(tex2D(_NormalMap, i.uv), _BumpScale);
+	float3 mainNormal = UnpackScaleNormal(tex2D(_NormalMap, i.uv.xy), _BumpScale);
+	float3 detailNormal = UnpackScaleNormal(tex2D(_DetailNormalMap, i.uv.zw), _DetailBumpScale);
+	i.normal = BlendNormals(mainNormal, detailNormal);
 	i.normal = i.normal.xzy;
 	i.normal = normalize(i.normal);
 }
@@ -58,7 +61,8 @@ UnityIndirect CreateIndirectLight(Interpolators i) {
 
 Interpolators vert(VertexData v) {
 	Interpolators i;
-	i.uv = v.uv * _Albedo_ST.xy + _Albedo_ST.zw;
+	i.uv.xy = v.uv * _Albedo_ST.xy + _Albedo_ST.zw;
+	i.uv.zw = v.uv * _DetailTex_ST.xy + _DetailTex_ST.zw;
 	i.position = UnityObjectToClipPos(v.position);
 	i.worldPos = mul(unity_ObjectToWorld, v.position);
 	i.normal = UnityObjectToWorldNormal(v.normal);
@@ -70,7 +74,8 @@ float4 frag(Interpolators i) : SV_TARGET{
 	InitializeFragmentNormal(i);
 
 	float3 lightColor = _LightColor0.rgb;
-	float3 albedo = tex2D(_Albedo, i.uv) * _Tint;
+	float3 albedo = tex2D(_Albedo, i.uv.xy) * _Tint;
+	albedo *= tex2D(_DetailTex, i.uv.zw) * unity_ColorSpaceDouble;
 
 	float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
 	float3 lightDir = _WorldSpaceLightPos0.xyz;
