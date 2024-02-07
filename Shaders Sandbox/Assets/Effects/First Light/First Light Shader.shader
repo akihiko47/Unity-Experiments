@@ -26,6 +26,7 @@ Shader "Effects/First Light" {
 
 			CGPROGRAM
 
+			#pragma multi_compile _ SHADOWS_SCREEN
 			#pragma multi_compile _ VERTEXLIGHT_ON
 			#define FORWARD_BASE_PASS
 
@@ -48,13 +49,31 @@ Shader "Effects/First Light" {
 
 			CGPROGRAM
 
-			#pragma multi_compile DIRECTIONAL DIRECTIONAL_COOKIE POINT POINT_COOKIE SPOT  // #pragma multi_compile_fwdadd
+			#pragma multi_compile_fwdadd_fullshadows //#pragma multi_compile DIRECTIONAL DIRECTIONAL_COOKIE POINT POINT_COOKIE SPOT + Multiple shadows
 
 			#pragma vertex vert
 			#pragma fragment frag
 			#pragma target 3.0
 
 			#include "MyLighting.cginc"
+
+			ENDCG
+		}
+
+		Pass {
+			Tags {
+				"LightMode" = "ShadowCaster"
+			}
+
+			CGPROGRAM
+
+			
+
+			#pragma vertex vert
+			#pragma fragment frag
+			#pragma target 3.0
+
+			#include "MyShadows.cginc"
 
 			ENDCG
 		}

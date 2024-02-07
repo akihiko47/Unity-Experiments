@@ -9,7 +9,7 @@ float _Gloss, _Fresnel, _Metallic, _BumpScale, _DetailBumpScale;
 
 
 struct Interpolators {
-	float4 position : SV_POSITION;
+	float4 pos : SV_POSITION;
 	float4 uv : TEXCOORD0;
 	float3 normal : TEXCOORD1;
 
@@ -25,10 +25,12 @@ struct Interpolators {
 	#ifdef VERTEXLIGHT_ON
 		float3 vertexLightColor : TEXCOORD5;
 	#endif
+
+	SHADOW_COORDS(5)
 };
 
 struct VertexData {
-	float4 position : POSITION;
+	float4 vertex : POSITION;
 	float2 uv : TEXCOORD0;
 	float3 normal : NORMAL;
 	float4 tangent : TANGENT;
@@ -92,8 +94,8 @@ Interpolators vert(VertexData v) {
 	Interpolators i;
 	i.uv.xy = v.uv * _Albedo_ST.xy + _Albedo_ST.zw;
 	i.uv.zw = v.uv * _DetailTex_ST.xy + _DetailTex_ST.zw;
-	i.position = UnityObjectToClipPos(v.position);
-	i.worldPos = mul(unity_ObjectToWorld, v.position);
+	i.pos = UnityObjectToClipPos(v.vertex);
+	i.worldPos = mul(unity_ObjectToWorld, v.vertex);
 	i.normal = UnityObjectToWorldNormal(v.normal);
 
 	#if defined(BINORMAL_PER_FRAGMENT)
@@ -102,6 +104,8 @@ Interpolators vert(VertexData v) {
 		i.tangent = UnityObjectToWorldDir(v.tangent.xyz);
 		i.binormal = CreateBinormal(i.normal, i.tangent, v.tangent.w);
 	#endif
+
+	TRANSFER_SHADOW(i);
 
 	ComputeVertexLightColor(i);
 	return i;
@@ -124,7 +128,6 @@ float4 frag(Interpolators i) : SV_TARGET{
 	albedo = DiffuseAndSpecularFromMetallic(
 		albedo, _Metallic, specularTint, oneMinusReflectivity
 	);
-
 
 	// ===== BLING PHONG LIGHT MODEL =====
 
@@ -164,7 +167,13 @@ float4 frag(Interpolators i) : SV_TARGET{
 	#else 
 		light.dir = _WorldSpaceLightPos0.xyz;
 	#endif
-	UNITY_LIGHT_ATTENUATION(attenuation, 0, i.worldPos);
+
+	#ifdef SHADOWS_SCREEN
+		float attenuation = SHADOW_ATTENUATION(i);
+	#else
+		UNITY_LIGHT_ATTENUATION(attenuation, 0, i.worldPos);
+	#endif
+
 	light.color = lightColor * attenuation;
 	light.ndotl = DotClamped(i.normal, lightDir);
 
