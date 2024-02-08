@@ -67,7 +67,7 @@ Shader "Effects/First Light" {
 
 			CGPROGRAM
 
-			
+			#pragma multi_compile_shadowcaster
 
 			#pragma vertex vert
 			#pragma fragment frag
