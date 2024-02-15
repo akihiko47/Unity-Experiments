@@ -81,13 +81,13 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BumpScale: 2.05
+    - _BumpScale: 0.5
     - _Cutoff: 0.5
-    - _DetailBumpScale: 1
+    - _DetailBumpScale: 0.02
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _Fresnel: 0
-    - _Gloss: 0.318
+    - _Gloss: 0
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1

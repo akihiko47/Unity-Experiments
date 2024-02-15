@@ -74,7 +74,7 @@ void ComputeVertexLightColor(inout Interpolators i) {
 }
 
 
-UnityIndirect CreateIndirectLight(Interpolators i) {
+UnityIndirect CreateIndirectLight(Interpolators i, float3 viewDir) {
 	UnityIndirect indirectLight;
 	indirectLight.diffuse = 0;
 	indirectLight.specular = 0;
@@ -85,7 +85,8 @@ UnityIndirect CreateIndirectLight(Interpolators i) {
 
 	#ifdef FORWARD_BASE_PASS
 		indirectLight.diffuse += max(0, ShadeSH9(float4(i.normal, 1.0)));
-		float4 skyboxSample = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, i.normal);
+		float3 sampleVec = reflect(-viewDir, i.normal);
+		float4 skyboxSample = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, sampleVec);
 		indirectLight.specular = DecodeHDR(skyboxSample, unity_SpecCube0_HDR);
 	#endif
 
@@ -183,6 +184,6 @@ float4 frag(Interpolators i) : SV_TARGET{
 		albedo, specularTint,
 		oneMinusReflectivity, _Gloss,
 		i.normal, viewDir,
-		light, CreateIndirectLight(i)
+		light, CreateIndirectLight(i, viewDir)
 	);
 }
