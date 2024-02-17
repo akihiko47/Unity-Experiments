@@ -85,9 +85,14 @@ UnityIndirect CreateIndirectLight(Interpolators i, float3 viewDir) {
 
 	#ifdef FORWARD_BASE_PASS
 		indirectLight.diffuse += max(0, ShadeSH9(float4(i.normal, 1.0)));
+
 		float3 sampleVec = reflect(-viewDir, i.normal);
-		float4 skyboxSample = UNITY_SAMPLE_TEXCUBE(unity_SpecCube0, sampleVec);
-		indirectLight.specular = DecodeHDR(skyboxSample, unity_SpecCube0_HDR);
+		// float4 skyboxSample = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, sampleVec, (1- _Gloss) * 6.0);
+		// indirectLight.specular = DecodeHDR(skyboxSample, unity_SpecCube0_HDR);
+		Unity_GlossyEnvironmentData envData;
+		envData.roughness = 1 - _Gloss;
+		envData.reflUVW = sampleVec;
+		indirectLight.specular = Unity_GlossyEnvironment( UNITY_PASS_TEXCUBE(unity_SpecCube0), unity_SpecCube0_HDR, envData );
 	#endif
 
 	return indirectLight;
