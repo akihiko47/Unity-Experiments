@@ -73,6 +73,17 @@ void ComputeVertexLightColor(inout Interpolators i) {
 	#endif
 }
 
+float3 BoxProjection(float3 direction, float3 position, float4 cubemapPosition, float3 boxMin, float3 boxMax) {
+	UNITY_BRANCH
+	if (cubemapPosition.w > 0) {
+		float3 factors =
+			((direction > 0 ? boxMax : boxMin) - position) / direction;
+		float scalar = min(min(factors.x, factors.y), factors.z);
+		direction = direction * scalar + (position - cubemapPosition);
+	}
+	return direction;
+}
+
 
 UnityIndirect CreateIndirectLight(Interpolators i, float3 viewDir) {
 	UnityIndirect indirectLight;
@@ -91,7 +102,13 @@ UnityIndirect CreateIndirectLight(Interpolators i, float3 viewDir) {
 		// indirectLight.specular = DecodeHDR(skyboxSample, unity_SpecCube0_HDR);
 		Unity_GlossyEnvironmentData envData;
 		envData.roughness = 1 - _Gloss;
-		envData.reflUVW = sampleVec;
+		envData.reflUVW = BoxProjection(
+			sampleVec,
+			i.worldPos,
+			unity_SpecCube0_ProbePosition,
+			unity_SpecCube0_BoxMin,
+			unity_SpecCube0_BoxMax
+		);
 		indirectLight.specular = Unity_GlossyEnvironment( UNITY_PASS_TEXCUBE(unity_SpecCube0), unity_SpecCube0_HDR, envData );
 	#endif
 
