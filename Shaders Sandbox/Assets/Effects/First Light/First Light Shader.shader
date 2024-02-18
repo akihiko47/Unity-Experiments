@@ -78,4 +78,6 @@ Shader "Effects/First Light" {
 			ENDCG
 		}
 	}
+
+	CustomEditor "MyLightingShaderGUI"
 }
