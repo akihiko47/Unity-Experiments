@@ -1,9 +1,9 @@
-Shader "Effects/First Light" {
+Shader "Custom/CatLikeCoding" {
 
 	Properties{
 		_Tint("Tint", Color) = (1.0, 1.0, 1.0, 1.0)
 		_Albedo("Albedo", 2D) = "white" {}
-		_DetailTex("Detail texture for albedo", 2D) = "gray" {}
+		_DetailTex("Detail Albedo", 2D) = "gray" {}
 		[NoScaleOffset] _NormalMap("Normal Map", 2D) = "bump" {}
 		_BumpScale("BumpScale", float) = 1.0
 		[NoScaleOffset] _DetailNormalMap("Detail Normal Map", 2D) = "bump" {}
