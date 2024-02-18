@@ -4,7 +4,7 @@
 #include "AutoLight.cginc"
 
 float4 _Tint;
-sampler2D _Albedo, _NormalMap, _DetailNormalMap;
+sampler2D _Albedo, _NormalMap, _DetailNormalMap, _MetallicMap;
 sampler2D _DetailTex;
 float4 _Albedo_ST, _DetailTex_ST;
 float _Gloss, _Fresnel, _Metallic, _BumpScale, _DetailBumpScale;
@@ -42,6 +42,10 @@ struct VertexData {
 float3 CreateBinormal(float3 normal, float3 tangent, float binormalSign) {
 	return cross(normal, tangent.xyz) *
 		(binormalSign * unity_WorldTransformParams.w);
+}
+
+float GetMetallic(Interpolators i) {
+	return tex2D(_MetallicMap, i.uv.xy).r * _Metallic;
 }
 
 
@@ -176,7 +180,7 @@ float4 frag(Interpolators i) : SV_TARGET{
 	float3 specularTint;
 	float oneMinusReflectivity;
 	albedo = DiffuseAndSpecularFromMetallic(
-		albedo, _Metallic, specularTint, oneMinusReflectivity
+		albedo, GetMetallic(i), specularTint, oneMinusReflectivity
 	);
 
 	// ===== BLING PHONG LIGHT MODEL =====

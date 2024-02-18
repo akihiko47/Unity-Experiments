@@ -45,10 +45,11 @@ public class MyLightingShaderGUI : ShaderGUI {
     }
 
     void DoMetallic() {
-        MaterialProperty slider = FindProperty("_Metallic");
-        EditorGUI.indentLevel += 2;
-        editor.ShaderProperty(slider, MakeLabel(slider));
-        EditorGUI.indentLevel -= 2;
+        MaterialProperty map = FindProperty("_MetallicMap");
+        editor.TexturePropertySingleLine(
+            MakeLabel(map, "Metallic (R)"), map,
+            FindProperty("_Metallic")
+        );
     }
 
     void DoGlossiness() {

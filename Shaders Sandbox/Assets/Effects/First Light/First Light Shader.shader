@@ -4,12 +4,16 @@ Shader "Custom/CatLikeCoding" {
 		_Tint("Tint", Color) = (1.0, 1.0, 1.0, 1.0)
 		_Albedo("Albedo", 2D) = "white" {}
 		_DetailTex("Detail Albedo", 2D) = "gray" {}
+
 		[NoScaleOffset] _NormalMap("Normal Map", 2D) = "bump" {}
 		_BumpScale("BumpScale", float) = 1.0
 		[NoScaleOffset] _DetailNormalMap("Detail Normal Map", 2D) = "bump" {}
 		_DetailBumpScale("BumpScale", float) = 1.0
+
 		_Gloss("Glossiness", Range(0.0, 1.0)) = 0.5
 		[Gamma] _Metallic("Metallic", Range(0.0, 1.0)) = 0.0
+		[NoScaleOffset] _MetallicMap("Metallic Map", 2D) = "white" {}
+
 		_Fresnel("Fresnel Effect", Range(0.0, 1.0)) = 0.0
 	}
 
