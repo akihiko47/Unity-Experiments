@@ -13,6 +13,8 @@ public class MyLightingShaderGUI : ShaderGUI {
         Uniform, Albedo, Metallic
     }
 
+    static ColorPickerHDRConfig emissionConfig = new ColorPickerHDRConfig(0f, 99f, 1f / 99f, 3f);
+
     public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties) {
         this.editor = materialEditor;
         this.properties = properties;
@@ -27,9 +29,11 @@ public class MyLightingShaderGUI : ShaderGUI {
         MaterialProperty mainTex = FindProperty("_Albedo");
         editor.TexturePropertySingleLine(MakeLabel(mainTex, "Albedo (RGB)"), mainTex, FindProperty("_Tint"));
 
-        DoNormals();
         DoMetallic();
         DoGlossiness();
+
+        DoNormals();
+        DoEmission();
 
         editor.TextureScaleOffsetProperty(mainTex);
     }
@@ -60,6 +64,18 @@ public class MyLightingShaderGUI : ShaderGUI {
         );
         if (EditorGUI.EndChangeCheck()) {
             SetKeyword("_METALLIC_MAP", map.textureValue);
+        }
+    }
+
+    void DoEmission() {
+        MaterialProperty map = FindProperty("_EmissionMap");
+        EditorGUI.BeginChangeCheck();
+        editor.TexturePropertyWithHDRColor(
+            MakeLabel("Emission (RGB)"), map, FindProperty("_Emission"),
+            emissionConfig, false
+        );
+        if (EditorGUI.EndChangeCheck()) {
+            SetKeyword("_EMISSION_MAP", map.textureValue);
         }
     }
 

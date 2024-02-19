@@ -4,9 +4,9 @@
 #include "AutoLight.cginc"
 
 float4 _Tint;
-sampler2D _Albedo, _NormalMap, _DetailNormalMap, _MetallicMap;
+sampler2D _Albedo, _NormalMap, _DetailNormalMap, _MetallicMap, _EmissionMap;
 sampler2D _DetailTex;
-float4 _Albedo_ST, _DetailTex_ST;
+float4 _Albedo_ST, _DetailTex_ST, _Emission;
 float _Gloss, _Fresnel, _Metallic, _BumpScale, _DetailBumpScale;
 
 
@@ -60,6 +60,18 @@ float GetGlossiness(Interpolators i) {
 		glossiness = tex2D(_MetallicMap, i.uv.xy).a;
 	#endif
 	return glossiness * _Gloss;
+}
+
+float3 GetEmission(Interpolators i) {
+	#if defined(FORWARD_BASE_PASS)
+		#if defined(_EMISSION_MAP)
+			return tex2D(_EmissionMap, i.uv.xy) * _Emission;
+		#else
+			return _Emission;
+		#endif
+	#else
+		return 0;
+	#endif
 }
 
 
@@ -245,10 +257,12 @@ float4 frag(Interpolators i) : SV_TARGET{
 	light.color = lightColor * attenuation;
 	light.ndotl = DotClamped(i.normal, lightDir);
 
-	return UNITY_BRDF_PBS(
+	float4 color = UNITY_BRDF_PBS(
 		albedo, specularTint,
 		oneMinusReflectivity, GetGlossiness(i),
 		i.normal, viewDir,
 		light, CreateIndirectLight(i, viewDir)
 	);
+	color.rgb += GetEmission(i);
+	return color;
 }
