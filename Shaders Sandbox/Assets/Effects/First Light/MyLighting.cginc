@@ -45,7 +45,11 @@ float3 CreateBinormal(float3 normal, float3 tangent, float binormalSign) {
 }
 
 float GetMetallic(Interpolators i) {
-	return tex2D(_MetallicMap, i.uv.xy).r * _Metallic;
+	#ifdef _METALLIC_MAP
+		return tex2D(_MetallicMap, i.uv.xy).r;
+	#else
+		return _Metallic;
+	#endif
 }
 
 

@@ -3,6 +3,7 @@ using UnityEditor;
 
 public class MyLightingShaderGUI : ShaderGUI {
 
+    Material target;
     MaterialEditor editor;
     MaterialProperty[] properties;
 
@@ -11,6 +12,7 @@ public class MyLightingShaderGUI : ShaderGUI {
     public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties) {
         this.editor = materialEditor;
         this.properties = properties;
+        this.target = materialEditor.target as Material;
         DoMain();
         DoSecondary();
     }
@@ -46,10 +48,15 @@ public class MyLightingShaderGUI : ShaderGUI {
 
     void DoMetallic() {
         MaterialProperty map = FindProperty("_MetallicMap");
+        EditorGUI.BeginChangeCheck();
         editor.TexturePropertySingleLine(
-            MakeLabel(map, "Metallic (R)"), map,
-            FindProperty("_Metallic")
+            MakeLabel(map, "Metallic (R)"),
+            map,
+            map.textureValue ? null : FindProperty("_Metallic")
         );
+        if (EditorGUI.EndChangeCheck()) {
+            SetKeyword("_METALLIC_MAP", map.textureValue);
+        }
     }
 
     void DoGlossiness() {
@@ -78,6 +85,14 @@ public class MyLightingShaderGUI : ShaderGUI {
         staticLabel.text = property.displayName;
         staticLabel.tooltip = tooltip;
         return staticLabel;
+    }
+
+    void SetKeyword(string keyword, bool state) {
+        if (state) {
+            target.EnableKeyword(keyword);
+        } else {
+            target.DisableKeyword(keyword);
+        }
     }
 
 }
