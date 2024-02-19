@@ -52,6 +52,16 @@ float GetMetallic(Interpolators i) {
 	#endif
 }
 
+float GetGlossiness(Interpolators i) {
+	float glossiness = 1;
+	#if defined(_SMOOTHNESS_ALBEDO)
+		glossiness = tex2D(_Albedo, i.uv.xy).a;
+	#elif defined(_SMOOTHNESS_METALLIC) && defined(_METALLIC_MAP)
+		glossiness = tex2D(_MetallicMap, i.uv.xy).a;
+	#endif
+	return glossiness * _Gloss;
+}
+
 
 void InitializeFragmentNormal(inout Interpolators i) {
 	float3 mainNormal = UnpackScaleNormal(tex2D(_NormalMap, i.uv.xy), _BumpScale);
@@ -111,7 +121,7 @@ UnityIndirect CreateIndirectLight(Interpolators i, float3 viewDir) {
 		// float4 skyboxSample = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, sampleVec, (1- _Gloss) * 6.0);
 		// indirectLight.specular = DecodeHDR(skyboxSample, unity_SpecCube0_HDR);
 		Unity_GlossyEnvironmentData envData;
-		envData.roughness = 1 - _Gloss;
+		envData.roughness = 1 - GetGlossiness(i);
 		envData.reflUVW = BoxProjection(
 			sampleVec,
 			i.worldPos,
@@ -237,7 +247,7 @@ float4 frag(Interpolators i) : SV_TARGET{
 
 	return UNITY_BRDF_PBS(
 		albedo, specularTint,
-		oneMinusReflectivity, _Gloss,
+		oneMinusReflectivity, GetGlossiness(i),
 		i.normal, viewDir,
 		light, CreateIndirectLight(i, viewDir)
 	);

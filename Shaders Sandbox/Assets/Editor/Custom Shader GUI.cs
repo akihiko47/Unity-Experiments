@@ -9,6 +9,10 @@ public class MyLightingShaderGUI : ShaderGUI {
 
     static GUIContent staticLabel = new GUIContent();
 
+    enum SmoothnessSource {
+        Uniform, Albedo, Metallic
+    }
+
     public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties) {
         this.editor = materialEditor;
         this.properties = properties;
@@ -60,9 +64,25 @@ public class MyLightingShaderGUI : ShaderGUI {
     }
 
     void DoGlossiness() {
+        SmoothnessSource source = SmoothnessSource.Uniform;
+        if (IsKeywordEnabled("_SMOOTHNESS_ALBEDO")) {
+            source = SmoothnessSource.Albedo;
+        } else if (IsKeywordEnabled("_SMOOTHNESS_METALLIC")) {
+            source = SmoothnessSource.Metallic;
+        }
+
         MaterialProperty slider = FindProperty("_Gloss");
         EditorGUI.indentLevel += 2;
         editor.ShaderProperty(slider, MakeLabel(slider));
+
+        EditorGUI.BeginChangeCheck();
+        source = (SmoothnessSource)EditorGUILayout.EnumPopup(MakeLabel("Source"), source);
+        if (EditorGUI.EndChangeCheck()) {
+            RecordAction("Smoothness Source");
+            SetKeyword("_SMOOTHNESS_ALBEDO", source == SmoothnessSource.Albedo);
+            SetKeyword("_SMOOTHNESS_METALLIC", source == SmoothnessSource.Metallic);
+        }
+
         EditorGUI.indentLevel -= 2;
     }
 
@@ -93,6 +113,14 @@ public class MyLightingShaderGUI : ShaderGUI {
         } else {
             target.DisableKeyword(keyword);
         }
+    }
+
+    bool IsKeywordEnabled(string keyword) {
+        return target.IsKeywordEnabled(keyword);
+    }
+
+    void RecordAction(string label) {
+        editor.RegisterPropertyChangeUndo(label);
     }
 
 }

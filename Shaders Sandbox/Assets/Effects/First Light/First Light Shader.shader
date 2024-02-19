@@ -33,6 +33,7 @@ Shader "Custom/CatLikeCoding" {
 			#pragma multi_compile _ SHADOWS_SCREEN
 			#pragma multi_compile _ VERTEXLIGHT_ON
 			#pragma shader_feature _METALLIC_MAP
+			#pragma shader_feature _ _SMOOTHNESS_ALBEDO _SMOOTHNESS_METALLIC
 			#define FORWARD_BASE_PASS
 
 			#pragma vertex vert
@@ -56,6 +57,7 @@ Shader "Custom/CatLikeCoding" {
 
 			#pragma multi_compile_fwdadd_fullshadows //#pragma multi_compile DIRECTIONAL DIRECTIONAL_COOKIE POINT POINT_COOKIE SPOT + Multiple shadows
 			#pragma shader_feature _METALLIC_MAP
+			#pragma shader_feature _ _SMOOTHNESS_ALBEDO _SMOOTHNESS_METALLIC
 
 			#pragma vertex vert
 			#pragma fragment frag
