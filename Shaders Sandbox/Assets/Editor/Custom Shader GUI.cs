@@ -13,6 +13,7 @@ public class MyLightingShaderGUI : ShaderGUI {
         Uniform, Albedo, Metallic
     }
 
+    [System.Obsolete]
     static ColorPickerHDRConfig emissionConfig = new ColorPickerHDRConfig(0f, 99f, 1f / 99f, 3f);
 
     public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties) {
@@ -23,6 +24,7 @@ public class MyLightingShaderGUI : ShaderGUI {
         DoSecondary();
     }
 
+    [System.Obsolete]
     void DoMain() {
         GUILayout.Label("Main Maps", EditorStyles.boldLabel);
 
@@ -33,7 +35,9 @@ public class MyLightingShaderGUI : ShaderGUI {
         DoGlossiness();
 
         DoNormals();
+        DoOcclusion();
         DoEmission();
+        DoDetailMask();
 
         editor.TextureScaleOffsetProperty(mainTex);
     }
@@ -67,6 +71,7 @@ public class MyLightingShaderGUI : ShaderGUI {
         }
     }
 
+    [System.Obsolete]
     void DoEmission() {
         MaterialProperty map = FindProperty("_EmissionMap");
         EditorGUI.BeginChangeCheck();
@@ -76,6 +81,30 @@ public class MyLightingShaderGUI : ShaderGUI {
         );
         if (EditorGUI.EndChangeCheck()) {
             SetKeyword("_EMISSION_MAP", map.textureValue);
+        }
+    }
+
+    void DoOcclusion() {
+        MaterialProperty map = FindProperty("_OcclusionMap");
+        EditorGUI.BeginChangeCheck();
+        editor.TexturePropertySingleLine(
+            MakeLabel(map, "Occlusion (G)"),
+            map,
+            map.textureValue ? FindProperty("_OcclusionStrength") : null
+        );
+        if (EditorGUI.EndChangeCheck()) {
+            SetKeyword("_OCCLUSION_MAP", map.textureValue);
+        }
+    }
+
+    void DoDetailMask() {
+        MaterialProperty mask = FindProperty("_DetailMask");
+        EditorGUI.BeginChangeCheck();
+        editor.TexturePropertySingleLine(
+            MakeLabel(mask, "Detail Mask (A)"), mask
+        );
+        if (EditorGUI.EndChangeCheck()) {
+            SetKeyword("_DETAIL_MASK", mask.textureValue);
         }
     }
 

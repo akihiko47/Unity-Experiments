@@ -1,0 +1,7 @@
+﻿[*.cs]
+
+# CS0809: Устаревший член переопределяет неустаревший член
+dotnet_diagnostic.CS0809.severity = silent
+
+# CS0612: Тип или член устарел
+dotnet_diagnostic.CS0612.severity = silent

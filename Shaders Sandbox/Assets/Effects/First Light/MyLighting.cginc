@@ -4,10 +4,10 @@
 #include "AutoLight.cginc"
 
 float4 _Tint;
-sampler2D _Albedo, _NormalMap, _DetailNormalMap, _MetallicMap, _EmissionMap;
+sampler2D _Albedo, _NormalMap, _DetailNormalMap, _MetallicMap, _EmissionMap, _OcclusionMap, _DetailMask;
 sampler2D _DetailTex;
 float4 _Albedo_ST, _DetailTex_ST, _Emission;
-float _Gloss, _Fresnel, _Metallic, _BumpScale, _DetailBumpScale;
+float _Gloss, _Fresnel, _Metallic, _BumpScale, _DetailBumpScale, _OcclusionStrength;
 
 
 struct Interpolators {
@@ -74,10 +74,32 @@ float3 GetEmission(Interpolators i) {
 	#endif
 }
 
+float GetOcclusion(Interpolators i) {
+	#ifdef _OCCLUSION_MAP
+		return lerp(1.0, tex2D(_OcclusionMap, i.uv.xy).g, _OcclusionStrength);
+	#else
+		return 1.0;
+	#endif
+}
+
+float GetDetailMask(Interpolators i) {
+	#if defined (_DETAIL_MASK)
+		return tex2D(_DetailMask, i.uv.xy).a;
+	#else
+		return 1;
+	#endif
+}
+
+float3 GetAlbedo(Interpolators i) {
+	float3 albedo = tex2D(_Albedo, i.uv.xy).rgb * _Tint.rgb;
+	float3 details = tex2D(_DetailTex, i.uv.zw) * unity_ColorSpaceDouble;
+	return lerp(albedo, albedo * details, GetDetailMask(i));
+}
 
 void InitializeFragmentNormal(inout Interpolators i) {
 	float3 mainNormal = UnpackScaleNormal(tex2D(_NormalMap, i.uv.xy), _BumpScale);
 	float3 detailNormal = UnpackScaleNormal(tex2D(_DetailNormalMap, i.uv.zw), _DetailBumpScale);
+	detailNormal = lerp(float3(0, 0, 1), detailNormal, GetDetailMask(i));
 	float3 tangentSpaceNormal = BlendNormals(mainNormal, detailNormal);
 
 	#if defined(BINORMAL_PER_FRAGMENT)
@@ -165,6 +187,10 @@ UnityIndirect CreateIndirectLight(Interpolators i, float3 viewDir) {
 			indirectLight.specular = probe0;
 		#endif
 
+		float occlusion = GetOcclusion(i);
+		indirectLight.specular *= occlusion;
+		indirectLight.diffuse *= occlusion;
+
 	#endif
 
 	return indirectLight;
@@ -194,10 +220,6 @@ Interpolators vert(VertexData v) {
 float4 frag(Interpolators i) : SV_TARGET{
 	InitializeFragmentNormal(i);
 
-	float3 lightColor = _LightColor0.rgb;
-	float3 albedo = tex2D(_Albedo, i.uv.xy) * _Tint;
-	albedo *= tex2D(_DetailTex, i.uv.zw) * unity_ColorSpaceDouble;
-
 	float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
 	float3 lightDir = _WorldSpaceLightPos0.xyz;
 
@@ -205,8 +227,8 @@ float4 frag(Interpolators i) : SV_TARGET{
 
 	float3 specularTint;
 	float oneMinusReflectivity;
-	albedo = DiffuseAndSpecularFromMetallic(
-		albedo, GetMetallic(i), specularTint, oneMinusReflectivity
+	float3 albedo = DiffuseAndSpecularFromMetallic(
+		GetAlbedo(i), GetMetallic(i), specularTint, oneMinusReflectivity
 	);
 
 	// ===== BLING PHONG LIGHT MODEL =====
@@ -254,7 +276,7 @@ float4 frag(Interpolators i) : SV_TARGET{
 		UNITY_LIGHT_ATTENUATION(attenuation, 0, i.worldPos);
 	#endif
 
-	light.color = lightColor * attenuation;
+	light.color = _LightColor0 * attenuation;
 	light.ndotl = DotClamped(i.normal, lightDir);
 
 	float4 color = UNITY_BRDF_PBS(
