@@ -90,17 +90,34 @@ float GetDetailMask(Interpolators i) {
 	#endif
 }
 
+float3 GetTangentSpaceNormal(Interpolators i) {
+	float3 normal = float3(0, 0, 1);
+	#if defined(_NORMAL_MAP)
+		normal = UnpackScaleNormal(tex2D(_NormalMap, i.uv.xy), _BumpScale);
+	#endif
+	#if defined(_DETAIL_NORMAL_MAP)
+		float3 detailNormal =
+			UnpackScaleNormal(
+				tex2D(_DetailNormalMap, i.uv.zw), _DetailBumpScale
+			);
+		detailNormal = lerp(float3(0, 0, 1), detailNormal, GetDetailMask(i));
+		normal = BlendNormals(normal, detailNormal);
+	#endif
+	return normal;
+}
+
 float3 GetAlbedo(Interpolators i) {
 	float3 albedo = tex2D(_Albedo, i.uv.xy).rgb * _Tint.rgb;
-	float3 details = tex2D(_DetailTex, i.uv.zw) * unity_ColorSpaceDouble;
-	return lerp(albedo, albedo * details, GetDetailMask(i));
+	#ifdef _DETAIL_ALBEDO_MAP
+		float3 details = tex2D(_DetailTex, i.uv.zw) * unity_ColorSpaceDouble;
+		albedo = lerp(albedo, albedo * details, GetDetailMask(i));
+	#endif
+	return albedo;
 }
 
 void InitializeFragmentNormal(inout Interpolators i) {
-	float3 mainNormal = UnpackScaleNormal(tex2D(_NormalMap, i.uv.xy), _BumpScale);
-	float3 detailNormal = UnpackScaleNormal(tex2D(_DetailNormalMap, i.uv.zw), _DetailBumpScale);
-	detailNormal = lerp(float3(0, 0, 1), detailNormal, GetDetailMask(i));
-	float3 tangentSpaceNormal = BlendNormals(mainNormal, detailNormal);
+
+	float3 tangentSpaceNormal = GetTangentSpaceNormal(i);
 
 	#if defined(BINORMAL_PER_FRAGMENT)
 		float3 binormal = CreateBinormal(i.normal, i.tangent.xyz, i.tangent.w);

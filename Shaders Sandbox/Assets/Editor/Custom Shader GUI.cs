@@ -46,7 +46,11 @@ public class MyLightingShaderGUI : ShaderGUI {
         GUILayout.Label("Secondary Maps", EditorStyles.boldLabel);
 
         MaterialProperty detailTex = FindProperty("_DetailTex");
+        EditorGUI.BeginChangeCheck();
         editor.TexturePropertySingleLine(MakeLabel(detailTex, "Albedo (RGB) * 2"), detailTex);
+        if (EditorGUI.EndChangeCheck()) {
+            SetKeyword("_DETAIL_ALBEDO_MAP", detailTex.textureValue);
+        }
 
         DoSecondaryNormals();
 
@@ -55,7 +59,14 @@ public class MyLightingShaderGUI : ShaderGUI {
 
     void DoNormals() {
         MaterialProperty normalMap = FindProperty("_NormalMap");
-        editor.TexturePropertySingleLine(MakeLabel(normalMap), normalMap, normalMap.textureValue ? FindProperty("_BumpScale") : null);
+        EditorGUI.BeginChangeCheck();
+        editor.TexturePropertySingleLine(
+            MakeLabel(normalMap),
+            normalMap,
+            normalMap.textureValue ? FindProperty("_BumpScale") : null);
+        if (EditorGUI.EndChangeCheck()) {
+            SetKeyword("_NORMAL_MAP", normalMap.textureValue);
+        }
     }
 
     void DoMetallic() {
@@ -133,7 +144,14 @@ public class MyLightingShaderGUI : ShaderGUI {
 
     void DoSecondaryNormals() {
         MaterialProperty map = FindProperty("_DetailNormalMap");
-        editor.TexturePropertySingleLine(MakeLabel(map), map, map.textureValue ? FindProperty("_DetailBumpScale") : null);
+        EditorGUI.BeginChangeCheck();
+        editor.TexturePropertySingleLine(
+            MakeLabel(map),
+            map,
+            map.textureValue ? FindProperty("_DetailBumpScale") : null);
+        if (EditorGUI.EndChangeCheck()) {
+            SetKeyword("_DETAIL_NORMAL_MAP", map.textureValue);
+        }
     }
 
     MaterialProperty FindProperty(string name) {
