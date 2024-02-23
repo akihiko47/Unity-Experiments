@@ -1,4 +1,7 @@
 // Upgrade NOTE: replaced 'UNITY_PASS_TEXCUBE(unity_SpecCube1)' with 'UNITY_PASS_TEXCUBE_SAMPLER(unity_SpecCube1,unity_SpecCube0)'
+#if !defined(MY_LIGHTS_INCLUDED)
+
+#define MY_LIGHTS_INCLUDED
 
 #include "UnityPBSLighting.cginc"
 #include "AutoLight.cginc"
@@ -7,7 +10,7 @@ float4 _Tint;
 sampler2D _Albedo, _NormalMap, _DetailNormalMap, _MetallicMap, _EmissionMap, _OcclusionMap, _DetailMask;
 sampler2D _DetailTex;
 float4 _Albedo_ST, _DetailTex_ST, _Emission;
-float _Gloss, _Fresnel, _Metallic, _BumpScale, _DetailBumpScale, _OcclusionStrength;
+float _Gloss, _Fresnel, _Metallic, _BumpScale, _DetailBumpScale, _OcclusionStrength, _AlphaCutoff;
 
 
 struct Interpolators {
@@ -60,6 +63,14 @@ float GetGlossiness(Interpolators i) {
 		glossiness = tex2D(_MetallicMap, i.uv.xy).a;
 	#endif
 	return glossiness * _Gloss;
+}
+
+float GetAlpha(Interpolators i) {
+	float alpha = _Tint.a;
+	#if !defined(_SMOOTHNESS_ALBEDO)
+		alpha *= tex2D(_Albedo, i.uv.xy).a;
+	#endif
+	return alpha;
 }
 
 float3 GetEmission(Interpolators i) {
@@ -235,6 +246,9 @@ Interpolators vert(VertexData v) {
 };
 
 float4 frag(Interpolators i) : SV_TARGET{
+	float alpha = GetAlpha(i);
+	clip(alpha - _AlphaCutoff);
+
 	InitializeFragmentNormal(i);
 
 	float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
@@ -305,3 +319,6 @@ float4 frag(Interpolators i) : SV_TARGET{
 	color.rgb += GetEmission(i);
 	return color;
 }
+
+
+#endif

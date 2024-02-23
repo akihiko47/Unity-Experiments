@@ -12,7 +12,9 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _DETAIL_NORMAL_MAP
   - _EMISSION_MAP
+  - _NORMAL_MAP
   - _SMOOTHNESS_ALBEDO
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -42,7 +44,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DetailNormalMap:
-        m_Texture: {fileID: 2800000, guid: 9b842596dd280a349be46a7d076c65af, type: 3}
+        m_Texture: {fileID: 2800000, guid: 44478fa637f0eb744876d3608aa20b06, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DetailTex:
@@ -81,7 +83,7 @@ Material:
     m_Floats:
     - _BumpScale: 1
     - _Cutoff: 0.5
-    - _DetailBumpScale: 0.8
+    - _DetailBumpScale: 0.6
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _Fresnel: 0

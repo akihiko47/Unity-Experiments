@@ -3,6 +3,7 @@ Shader "Custom/CatLikeCoding" {
 	Properties{
 		_Tint("Tint", Color) = (1.0, 1.0, 1.0, 1.0)
 		_Albedo("Albedo", 2D) = "white" {}
+		_AlphaCutoff("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
 		_DetailTex("Detail Albedo", 2D) = "gray" {}
 
 		[NoScaleOffset] _NormalMap("Normal Map", 2D) = "bump" {}

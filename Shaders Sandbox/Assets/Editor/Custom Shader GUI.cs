@@ -31,6 +31,8 @@ public class MyLightingShaderGUI : ShaderGUI {
         MaterialProperty mainTex = FindProperty("_Albedo");
         editor.TexturePropertySingleLine(MakeLabel(mainTex, "Albedo (RGB)"), mainTex, FindProperty("_Tint"));
 
+        DoAlphaCutoff();
+
         DoMetallic();
         DoGlossiness();
 
@@ -117,6 +119,13 @@ public class MyLightingShaderGUI : ShaderGUI {
         if (EditorGUI.EndChangeCheck()) {
             SetKeyword("_DETAIL_MASK", mask.textureValue);
         }
+    }
+
+    void DoAlphaCutoff() {
+        MaterialProperty slider = FindProperty("_AlphaCutoff");
+        EditorGUI.indentLevel += 2;
+        editor.ShaderProperty(slider, MakeLabel(slider));
+        EditorGUI.indentLevel -= 2;
     }
 
     void DoGlossiness() {
