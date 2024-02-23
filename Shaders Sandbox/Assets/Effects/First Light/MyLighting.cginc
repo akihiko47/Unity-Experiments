@@ -247,7 +247,9 @@ Interpolators vert(VertexData v) {
 
 float4 frag(Interpolators i) : SV_TARGET{
 	float alpha = GetAlpha(i);
-	clip(alpha - _AlphaCutoff);
+	#ifdef _RENDERING_CUTOUT
+		clip(alpha - _AlphaCutoff);
+	#endif
 
 	InitializeFragmentNormal(i);
 

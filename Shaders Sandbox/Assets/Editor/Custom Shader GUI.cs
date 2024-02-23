@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEditor;
 
 public class MyLightingShaderGUI : ShaderGUI {
@@ -13,6 +14,12 @@ public class MyLightingShaderGUI : ShaderGUI {
         Uniform, Albedo, Metallic
     }
 
+    bool alphaCutoutVisible;
+
+    enum RenderingMode {
+        Opaque, Cutout
+    }
+
     [System.Obsolete]
     static ColorPickerHDRConfig emissionConfig = new ColorPickerHDRConfig(0f, 99f, 1f / 99f, 3f);
 
@@ -20,6 +27,7 @@ public class MyLightingShaderGUI : ShaderGUI {
         this.editor = materialEditor;
         this.properties = properties;
         this.target = materialEditor.target as Material;
+        DoRenderingMode();
         DoMain();
         DoSecondary();
     }
@@ -121,11 +129,36 @@ public class MyLightingShaderGUI : ShaderGUI {
         }
     }
 
+    void DoRenderingMode() {
+        RenderingMode mode = RenderingMode.Opaque;
+        alphaCutoutVisible = false;
+        if (IsKeywordEnabled("_RENDERING_CUTOUT")) {
+            mode = RenderingMode.Cutout;
+            alphaCutoutVisible = true;
+        }
+
+        EditorGUI.BeginChangeCheck();
+        mode = (RenderingMode)EditorGUILayout.EnumPopup(MakeLabel("Rendering Mode"), mode);
+        if (EditorGUI.EndChangeCheck()) {
+            RecordAction("Rendering Mode");
+            SetKeyword("_RENDERING_CUTOUT", mode == RenderingMode.Cutout);
+
+            RenderQueue queue = mode == RenderingMode.Opaque ? RenderQueue.Geometry : RenderQueue.AlphaTest;
+            string renderType = mode == RenderingMode.Opaque ? "" : "TransparentCutout";
+            foreach (Material m in editor.targets) {
+                m.renderQueue = (int)queue;
+                m.SetOverrideTag("RenderType", renderType);
+            }
+        }
+    }
+
     void DoAlphaCutoff() {
-        MaterialProperty slider = FindProperty("_AlphaCutoff");
-        EditorGUI.indentLevel += 2;
-        editor.ShaderProperty(slider, MakeLabel(slider));
-        EditorGUI.indentLevel -= 2;
+        if (alphaCutoutVisible) {
+            MaterialProperty slider = FindProperty("_AlphaCutoff");
+            EditorGUI.indentLevel += 2;
+            editor.ShaderProperty(slider, MakeLabel(slider));
+            EditorGUI.indentLevel -= 2;
+        }
     }
 
     void DoGlossiness() {
