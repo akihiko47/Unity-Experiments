@@ -30,8 +30,8 @@ struct MeshData {
 	}
 #else
 	float4 vert(MeshData v) : SV_POSITION{
-	float4 position = UnityClipSpaceShadowCasterPos(v.position.xyz, v.normal);
-	return UnityApplyLinearShadowBias(position);
+		float4 position = UnityClipSpaceShadowCasterPos(v.position.xyz, v.normal);
+		return UnityApplyLinearShadowBias(position);
 	}
 
 	float4 frag() : SV_TARGET{
