@@ -13,9 +13,9 @@ Shader "RayMarching/FirstRayMarcher" {
             #pragma vertex vert
             #pragma fragment frag
 
-            #define MAX_STEPS 100
+            #define MAX_STEPS 64
             #define MAX_DIST 1000.0
-            #define SURF_DIST 0.01
+            #define SURF_DIST 0.001
 
             #include "UnityCG.cginc"
 
@@ -74,7 +74,7 @@ Shader "RayMarching/FirstRayMarcher" {
 
             float3 GetNormal(float3 pnt) {
                 float d = GetDist(pnt);
-                float2 e = float2(0.01, 0.0);
+                float2 e = float2(0.001, 0.0);
 
                 float3 n = d - float3(GetDist(pnt - e.xyy),
                                       GetDist(pnt - e.yxy),
@@ -113,6 +113,9 @@ Shader "RayMarching/FirstRayMarcher" {
 
                 // LIGHT
                 float3 albedo = float3(0.7, 0.0, 0.0);
+                float3 ambient = float3(0.0, 0.0, 0.02);
+
+                float3 lightColor = float3(1, 0.8, 0.5);
                 float3 lightPos = float3(0.0, 5.0, 6.0);
 
                 lightPos.xz += float2(sin(_Time.y), cos(_Time.y));
@@ -122,17 +125,21 @@ Shader "RayMarching/FirstRayMarcher" {
                 float3 V = normalize(_CameraWorldPos - pnt);
                 float3 H = normalize(L + V);
 
-                float diffuse = saturate(dot(L, N));
-                float specular = pow(saturate(dot(N, H)), 35.0) * (diffuse > 0);
+                float3 diffuse = saturate(dot(L, N));
+                diffuse *= lightColor;
+                float3 specular = pow(saturate(dot(N, H)), 40.0) * (diffuse > 0);
+                specular *= lightColor;
 
                 color.rgb = albedo * diffuse + specular;
 
+
                 // SHADOWS
                 float lightDistance = length(lightPos - pnt);
-                float rayToLightLength = RayMarch(pnt + N * SURF_DIST * 2.0, L);
+                float rayToLightLength = RayMarch(pnt + N * SURF_DIST * 8.0, L);
                 color.rgb *= !(rayToLightLength < lightDistance);
 
-                
+                // AMBIENT
+                //color.rgb += ambient;
 
                 // BLENDING
                 return float4(color);
