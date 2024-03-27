@@ -14,8 +14,8 @@ Shader "RayMarching/FirstRayMarcher" {
             #pragma fragment frag
 
             #define MAX_STEPS 100
-            #define MAX_DIST 1000.0
-            #define SURF_DIST 0.001
+            #define MAX_DIST 100.0
+            #define SURF_DIST 0.01
 
             #include "UnityCG.cginc"
 
@@ -45,27 +45,13 @@ Shader "RayMarching/FirstRayMarcher" {
 
             float GetDist(float3 pnt) {
                 float4 sphere = float4(1.0, 1.0, 1.0, 0.5);
-                float dS = length(fmod(pnt, 2.0) - sphere.xyz) - sphere.w;
+                float dS = length(abs(fmod(pnt, 2.0)) - sphere.xyz) - sphere.w;
                 //float dT = sdTorus(pnt, float2(1, 0.2));
                 //float dP = pnt.y;
 
 
                 float d = dS;
                 return d;
-            }
-
-            float RayMarch(float3 rayOrigin, float3 rayDir) {
-
-                float OriginDistance = 0.0;
-
-                for (int i = 0; i < MAX_STEPS; i++) {
-                    float3 pnt = rayOrigin + rayDir * OriginDistance;
-                    float deltaDistance = GetDist(pnt);
-                    OriginDistance += deltaDistance;
-                    if (OriginDistance < SURF_DIST || OriginDistance > MAX_DIST) break;
-                }
-
-                return OriginDistance;
             }
 
             float3 GetNormal(float3 pnt) {
@@ -100,7 +86,16 @@ Shader "RayMarching/FirstRayMarcher" {
                 float3 rayOrigin = _CameraWorldPos;
                 float3 rayDir = normalize(i.ray);
 
-                float dist = RayMarch(rayOrigin, rayDir);
+                float OriginDistance = 0.0;
+
+                for (int i = 0; i < MAX_STEPS; i++) {
+                    float3 pnt = rayOrigin + rayDir * OriginDistance;
+                    float deltaDistance = GetDist(pnt);
+                    OriginDistance += deltaDistance;
+                    if (OriginDistance < SURF_DIST || OriginDistance > MAX_DIST) break;
+                };
+                float dist = OriginDistance;
+
                 float4 color = float4(0.0, 0.0, 0.0, 1.0);
                 color.w = (dist >= SURF_DIST) && (dist <= MAX_DIST);
 
@@ -128,7 +123,7 @@ Shader "RayMarching/FirstRayMarcher" {
 
                 float3 diffuse = saturate(dot(L, N));
                 diffuse *= lightColor;
-                float3 specular = pow(saturate(dot(N, H)), 40.0) * (diffuse > 0);
+                float3 specular = pow(saturate(dot(N, H)), 70.0) * (diffuse > 0);
                 specular *= lightColor;
 
                 color.rgb = albedo * diffuse + specular;
@@ -149,11 +144,10 @@ Shader "RayMarching/FirstRayMarcher" {
                 color.rgb = lerp(fogColor, color, fog);
 
                 // BLENDING
-                //return float4(color);
+                return float4(color);
 
                 //float4 originalColor = tex2D(_MainTex, i.uvOriginal);
-                float3 originalColor = (0.1, 0.1, 0.1);
-                return float4(originalColor * (1.0 - color.w) + color.xyz * color.w, 1.0);
+                //return float4(originalColor * (1.0 - color.w) + color.xyz * color.w, 1.0);
             }
 
             ENDCG
