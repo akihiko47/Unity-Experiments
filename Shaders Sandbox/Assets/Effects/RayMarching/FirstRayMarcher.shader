@@ -14,7 +14,7 @@ Shader "RayMarching/FirstRayMarcher" {
             #pragma fragment frag
 
             #define MAX_STEPS 100
-            #define MAX_DIST 100.0
+            #define MAX_DIST 1000.0
             #define SURF_DIST 0.01
 
             #include "UnityCG.cginc"
@@ -51,9 +51,10 @@ Shader "RayMarching/FirstRayMarcher" {
                 float4 sphere = float4(0.0, 1.0, 6.0, 1.0);
                 float dS = length(pnt - sphere.xyz) - sphere.w;
                 float dT = sdTorus(pnt, float2(1, 0.2));
+                float dP = pnt.y;
 
 
-                float d = min(dS, dT);
+                float d = min(dS, min(dT, dP));
                 return d;
             }
 
@@ -82,24 +83,6 @@ Shader "RayMarching/FirstRayMarcher" {
                 return normalize(n);
             }
 
-            float GetLightAttenuation(float3 pnt) {
-                float3 lightPos = float3(0.0, 5.0, 6.0);
-
-                lightPos.xz += float2(sin(_Time.y), cos(_Time.y));
-
-                float3 L = normalize(lightPos - pnt);
-                float3 N = GetNormal(pnt);
-
-                float diffuse = saturate(dot(L, N));
-                float light = diffuse;
-
-                float lightDistance = length(lightPos - pnt);
-                float rayToLightLength = RayMarch(pnt + N * SURF_DIST * 2.0, L);
-                light *= !(rayToLightLength < lightDistance);
-
-                return light;
-            }
-
             v2f vert (appdata v) {
                 v2f o;
 
@@ -117,16 +100,42 @@ Shader "RayMarching/FirstRayMarcher" {
 
             float4 frag(v2f i) : SV_Target{
 
+                // MARCHING
                 float3 rayOrigin = _CameraWorldPos;
-                float3 rayDir = i.ray;
+                float3 rayDir = normalize(i.ray);
 
                 float dist = RayMarch(rayOrigin, rayDir);
+                float4 color = float4(0.0, 0.0, 0.0, 1.0);
+                color.w = (dist > SURF_DIST) && (dist < MAX_DIST);
+
                 float3 pnt = rayOrigin + rayDir * dist;
 
-                float attenuation = GetLightAttenuation(pnt);
 
-                float4 color = (dist > SURF_DIST) && (dist < MAX_DIST);
+                // LIGHT
+                float3 albedo = float3(0.7, 0.0, 0.0);
+                float3 lightPos = float3(0.0, 5.0, 6.0);
 
+                lightPos.xz += float2(sin(_Time.y), cos(_Time.y));
+
+                float3 L = normalize(lightPos - pnt);
+                float3 N = GetNormal(pnt);
+                float3 V = normalize(_CameraWorldPos - pnt);
+                float3 H = normalize(L + V);
+
+                float diffuse = saturate(dot(L, N));
+                float specular = pow(saturate(dot(N, H)), 35.0) * (diffuse > 0);
+
+                color.rgb = albedo * diffuse + specular;
+
+                // SHADOWS
+                float lightDistance = length(lightPos - pnt);
+                float rayToLightLength = RayMarch(pnt + N * SURF_DIST * 2.0, L);
+                color.rgb *= !(rayToLightLength < lightDistance);
+
+                
+
+                // BLENDING
+                return float4(color);
                 float4 originalColor = tex2D(_MainTex, i.uvOriginal);
                 return float4(originalColor * (1.0 - color.w) + color.xyz * color.w, 1.0);
             }
