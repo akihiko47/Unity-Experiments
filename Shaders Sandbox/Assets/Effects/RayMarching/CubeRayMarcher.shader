@@ -62,6 +62,7 @@ Shader "Custom/CubeRayMarcher" {
             }
 
             fixed4 frag(v2f i) : SV_Target{
+                float2 uv = i.uv;
                 float3 ro = i.ro;
                 float3 rd = normalize(i.hitPos - ro);
 
@@ -77,12 +78,19 @@ Shader "Custom/CubeRayMarcher" {
                 }
                 float d = dO;
 
-                float3 col = 0.0;
+                // BORDERS
+                float2 b = float2(1.0, 1.0);
+                float2 dB = abs(uv) - b;
+                float mask = length(max(dB, 0.0) + min(max(dB.x, dB.y), 0.0)) < 0.2;
+
+                float3 col = float3(0.0, 0.0, 0.0);
                 if (d < MAX_DIST) {
                     float3 p = ro + rd * d;
                     float3 N = GetNormal(p);
                     col = N;
                 }
+
+                col = lerp(mask, col, 1-mask);
 
                 return float4(col, 1.0);
             }
