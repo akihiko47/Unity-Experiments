@@ -21,6 +21,7 @@ public class FullScreenShader : MonoBehaviour {
         _currentCamera = GetComponent<Camera>();
     }
 
+    [ImageEffectOpaque]
     private void OnRenderImage(RenderTexture source, RenderTexture destination) {
         if (_renderMaterial == null) {
             Graphics.Blit(source, destination);
@@ -31,7 +32,7 @@ public class FullScreenShader : MonoBehaviour {
         _renderMaterial.SetMatrix("_CameraToWorldMatrix", _currentCamera.cameraToWorldMatrix);
         _renderMaterial.SetVector("_CameraWorldPos", _currentCamera.transform.position);
 
-        Graphics.Blit(source, destination, _renderMaterial);
+        CustomGraphicsBlit(source, destination, _renderMaterial, 0);
     }
 
     private Matrix4x4 GetFrustumCorners(Camera cam) {
@@ -59,5 +60,37 @@ public class FullScreenShader : MonoBehaviour {
 
         return frustumCorners;
     }
+
+    static void CustomGraphicsBlit(RenderTexture source, RenderTexture dest, Material fxMaterial, int passNr) {
+        RenderTexture.active = dest;
+
+        fxMaterial.SetTexture("_MainTex", source);
+
+        GL.PushMatrix();
+        GL.LoadOrtho(); // Note: z value of vertices don't make a difference because we are using ortho projection
+
+        fxMaterial.SetPass(passNr);
+
+        GL.Begin(GL.QUADS);
+
+        // Here, GL.MultitexCoord2(0, x, y) assigns the value (x, y) to the TEXCOORD0 slot in the shader.
+        // GL.Vertex3(x,y,z) queues up a vertex at position (x, y, z) to be drawn.  Note that we are storing
+        // our own custom frustum information in the z coordinate.
+        GL.MultiTexCoord2(0, 0.0f, 0.0f);
+        GL.Vertex3(0.0f, 0.0f, 3.0f); // BL
+
+        GL.MultiTexCoord2(0, 1.0f, 0.0f);
+        GL.Vertex3(1.0f, 0.0f, 2.0f); // BR
+
+        GL.MultiTexCoord2(0, 1.0f, 1.0f);
+        GL.Vertex3(1.0f, 1.0f, 1.0f); // TR
+
+        GL.MultiTexCoord2(0, 0.0f, 1.0f);
+        GL.Vertex3(0.0f, 1.0f, 0.0f); // TL
+
+        GL.End();
+        GL.PopMatrix();
+    }
+
 
 }

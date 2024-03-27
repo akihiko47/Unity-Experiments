@@ -21,23 +21,39 @@ Shader "RayMarching/FirstRayMarcher" {
 
             sampler2D _MainTex;
 
+            uniform float3 _CameraWorldPos;
+            uniform float4x4 _FrustumCornersMatrix;
+            uniform float4x4 _CameraToWorldMatrix;
+
+
             struct appdata {
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
             };
 
             struct v2f {
-                float2 uv : TEXCOORD0;
                 float4 vertex : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                float2 uvOriginal :TEXCOORD01;
+                float3 ray: TEXCOORD2;
             };
+
+            float mod(float x, float y) {
+                return x - y * floor(x / y);
+            }
+
+            float sdTorus(float3 p, float2 t) {
+                float2 q = float2(length(p.xz) - t.x, p.y);
+                return length(q) - t.y;
+            }
 
             float GetDist(float3 pnt) {
                 float4 sphere = float4(0.0, 1.0, 6.0, 1.0);
                 float dS = length(pnt - sphere.xyz) - sphere.w;
+                float dT = sdTorus(pnt, float2(1, 0.2));
 
-                float dP = pnt.y;
 
-                float d = min(dS, dP);
+                float d = min(dS, dT);
                 return d;
             }
 
@@ -66,7 +82,7 @@ Shader "RayMarching/FirstRayMarcher" {
                 return normalize(n);
             }
 
-            float GetLight(float3 pnt) {
+            float GetLightAttenuation(float3 pnt) {
                 float3 lightPos = float3(0.0, 5.0, 6.0);
 
                 lightPos.xz += float2(sin(_Time.y), cos(_Time.y));
@@ -74,27 +90,47 @@ Shader "RayMarching/FirstRayMarcher" {
                 float3 L = normalize(lightPos - pnt);
                 float3 N = GetNormal(pnt);
 
-                return saturate(dot(L, N));
+                float diffuse = saturate(dot(L, N));
+                float light = diffuse;
+
+                float lightDistance = length(lightPos - pnt);
+                float rayToLightLength = RayMarch(pnt + N * SURF_DIST * 2.0, L);
+                light *= !(rayToLightLength < lightDistance);
+
+                return light;
             }
 
             v2f vert (appdata v) {
                 v2f o;
+
+                half index = v.vertex.z;
+                v.vertex.z = 0.1;
+
                 o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = v.uv * 2 - 1;
+                o.uvOriginal = v.uv;
+                o.uv = v.uv.xy * 2 - 1;
+
+                o.ray = _FrustumCornersMatrix[(int)index].xyz;
+                o.ray = mul(_CameraToWorldMatrix, o.ray);
                 return o;
             }
 
             float4 frag(v2f i) : SV_Target{
 
-                float3 rayOrigin = float3(0.0, 1.0, 0.0);
-                float3 rayDir = normalize(float3(i.uv.x, i.uv.y, 1.0));
+                float3 rayOrigin = _CameraWorldPos;
+                float3 rayDir = i.ray;
 
                 float dist = RayMarch(rayOrigin, rayDir);
+                float3 pnt = rayOrigin + rayDir * dist;
 
-                float light = GetLight(rayOrigin + rayDir * dist);
+                float attenuation = GetLightAttenuation(pnt);
 
-                return float4(light.xxx, 1.0);
+                float4 color = (dist > SURF_DIST) && (dist < MAX_DIST);
+
+                float4 originalColor = tex2D(_MainTex, i.uvOriginal);
+                return float4(originalColor * (1.0 - color.w) + color.xyz * color.w, 1.0);
             }
+
             ENDCG
         }
     }
