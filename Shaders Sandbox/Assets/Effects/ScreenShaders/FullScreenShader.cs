@@ -21,7 +21,7 @@ public class FullScreenShader : MonoBehaviour {
         _currentCamera = GetComponent<Camera>();
     }
 
-    [ImageEffectOpaque]
+    //[ImageEffectOpaque]
     private void OnRenderImage(RenderTexture source, RenderTexture destination) {
         if (_renderMaterial == null) {
             Graphics.Blit(source, destination);

@@ -13,7 +13,7 @@ Shader "RayMarching/FirstRayMarcher" {
             #pragma vertex vert
             #pragma fragment frag
 
-            #define MAX_STEPS 64
+            #define MAX_STEPS 100
             #define MAX_DIST 1000.0
             #define SURF_DIST 0.001
 
@@ -38,23 +38,19 @@ Shader "RayMarching/FirstRayMarcher" {
                 float3 ray: TEXCOORD2;
             };
 
-            float mod(float x, float y) {
-                return x - y * floor(x / y);
-            }
-
             float sdTorus(float3 p, float2 t) {
                 float2 q = float2(length(p.xz) - t.x, p.y);
                 return length(q) - t.y;
             }
 
             float GetDist(float3 pnt) {
-                float4 sphere = float4(0.0, 1.0, 6.0, 1.0);
-                float dS = length(pnt - sphere.xyz) - sphere.w;
-                float dT = sdTorus(pnt, float2(1, 0.2));
-                float dP = pnt.y;
+                float4 sphere = float4(1.0, 1.0, 1.0, 0.5);
+                float dS = length(fmod(pnt, 2.0) - sphere.xyz) - sphere.w;
+                //float dT = sdTorus(pnt, float2(1, 0.2));
+                //float dP = pnt.y;
 
 
-                float d = min(dS, min(dT, dP));
+                float d = dS;
                 return d;
             }
 
@@ -106,7 +102,7 @@ Shader "RayMarching/FirstRayMarcher" {
 
                 float dist = RayMarch(rayOrigin, rayDir);
                 float4 color = float4(0.0, 0.0, 0.0, 1.0);
-                color.w = (dist > SURF_DIST) && (dist < MAX_DIST);
+                color.w = (dist >= SURF_DIST) && (dist <= MAX_DIST);
 
                 float3 pnt = rayOrigin + rayDir * dist;
 
@@ -115,15 +111,20 @@ Shader "RayMarching/FirstRayMarcher" {
                 float3 albedo = float3(0.7, 0.0, 0.0);
                 float3 ambient = float3(0.0, 0.0, 0.02);
 
-                float3 lightColor = float3(1, 0.8, 0.5);
+                float3 lightColor = float3(1, 0.8, 0.5) * 0.5;
+                float3 dirLightDir = normalize(float3(1, 1, 1));
                 float3 lightPos = float3(0.0, 5.0, 6.0);
 
                 lightPos.xz += float2(sin(_Time.y), cos(_Time.y));
 
-                float3 L = normalize(lightPos - pnt);
+                float3 L = dirLightDir;
                 float3 N = GetNormal(pnt);
                 float3 V = normalize(_CameraWorldPos - pnt);
                 float3 H = normalize(L + V);
+
+                //float3 lightVec = lightPos - pnt;
+                //float attenuation = 1 / (1 + dot(lightVec, lightVec));
+                //lightColor *= attenuation;
 
                 float3 diffuse = saturate(dot(L, N));
                 diffuse *= lightColor;
@@ -134,16 +135,24 @@ Shader "RayMarching/FirstRayMarcher" {
 
 
                 // SHADOWS
-                float lightDistance = length(lightPos - pnt);
-                float rayToLightLength = RayMarch(pnt + N * SURF_DIST * 8.0, L);
-                color.rgb *= !(rayToLightLength < lightDistance);
+                //float lightDistance = length(lightPos - pnt);
+                //float rayToLightLength = RayMarch(pnt + N * SURF_DIST * 8.0, L);
+                //color.rgb *= !(rayToLightLength < lightDistance);
 
                 // AMBIENT
                 //color.rgb += ambient;
 
+                // FOG
+                float3 fogColor = float3(1.0, 1.0, 1.0);
+                float density = 0.03;
+                float fog = pow(2, -pow((dist * density), 2));
+                color.rgb = lerp(fogColor, color, fog);
+
                 // BLENDING
-                return float4(color);
-                float4 originalColor = tex2D(_MainTex, i.uvOriginal);
+                //return float4(color);
+
+                //float4 originalColor = tex2D(_MainTex, i.uvOriginal);
+                float3 originalColor = (0.1, 0.1, 0.1);
                 return float4(originalColor * (1.0 - color.w) + color.xyz * color.w, 1.0);
             }
 
