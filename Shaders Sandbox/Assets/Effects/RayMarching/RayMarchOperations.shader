@@ -163,8 +163,10 @@ Shader "RayMarching/RayMarchOperations" {
                 if (dist < MAX_DIST) {
                     float3 p = ro + rd * dist;
 
+                    float3 lightPos = float3(5.0, 10.0, 10.0);
+
                     float3 N = GetNormal(p);
-                    float3 L = normalize(float3(3, 5, 1));
+                    float3 L = normalize(lightPos - p);
                     float3 V = normalize(ro - p);
                     float3 H = normalize(L + V);
 
@@ -173,7 +175,7 @@ Shader "RayMarching/RayMarchOperations" {
                     float attenuation = !(rayToLightLength < MAX_DIST);
 
                     // LIGHTING
-                    float3 albedo = float3(0.3, 0.3, 0.3);
+                    float3 albedo = float3(0.4, 0.4, 0.4);
                     float3 ambient = float3(0.01, 0.02, 0.05);
 
                     float3 diff = saturate(dot(N, L)) * attenuation;
