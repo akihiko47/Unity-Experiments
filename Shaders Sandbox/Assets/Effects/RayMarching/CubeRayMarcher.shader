@@ -53,14 +53,14 @@ Shader "Custom/CubeRayMarcher" {
                 return d;
             }
 
-            float sdBox(float3 p, float3 R) {
+            float dBox(float3 p, float3 R) {
                 return length(max(abs(p) - R, 0.0));
             }
 
             float GetDist(float3 p) {
                 //float d = sdCapsule(p, float3(0, -0.3, 0), float3(0, 0.3, 0), 0.2);
                 //float d = sdTorus(p, 0.3, 0.1);
-                float d = sdBox(p, float3(0.3, 0.3, 0.3)) - 0.1;
+                float d = dBox(p, float3(0.3, 0.3, 0.3)) - 0.1;
 
                 return d;
             }

@@ -15,7 +15,7 @@ Shader "RayMarching/RayMarchOperations" {
 
             #define MAX_STEPS 100
             #define MAX_DIST 100.0
-            #define SURF_DIST 0.01
+            #define SURF_DIST 0.001
 
             #include "UnityCG.cginc"
 
@@ -38,17 +38,34 @@ Shader "RayMarching/RayMarchOperations" {
                 float3 ray: TEXCOORD2;
             };
 
-            float sdTorus(float3 p, float2 t) {
-                float2 q = float2(length(p.xz) - t.x, p.y);
-                return length(q) - t.y;
+            float2x2 Rot(float a) {
+                float s = sin(a);
+                float c = cos(a);
+                return float2x2(c, -s, s, c);
             }
 
-            float GetDist(float3 pnt) {
-                float4 sphere = float4(1.0, 1.0, 1.0, 0.5);
-                float dS = length(pnt - sphere.xyz) - sphere.w;
-                float dP = pnt.y;
+            float sdBox(float3 p, float3 b) {
+                float3 q = abs(p) - b;
+                return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+            }
 
-                float d = min(dS, dP);
+            float GetDist(float3 p) {
+                //float4 sphere = float4(1.0, 1.0, 1.0, 0.5);
+                //float dS = length(p - sphere.xyz) - sphere.w;
+
+                float3 bP = p - float3(0, 1, 0);  // Translate
+                bP.xz = mul(Rot(_Time.y), bP.xz);  // Rotate around axis
+                float dB = sdBox(bP, float3(0.5, 0.5, 0.5));
+
+                float3 sp = p - float3(3, 1, 0);
+                sp *= float3(1.0, 4.0, 1.0);  // Scale
+                float dS = length(sp) - 1.0;
+                dS = dS / 4.0;  // ! Scale compensation !
+
+                float dP = p.y;
+
+                float d = min(dB, dP);
+                d = min(d, dS);
                 return d;
             }
 
@@ -106,19 +123,19 @@ Shader "RayMarching/RayMarchOperations" {
                     float3 p = ro + rd * dist;
 
                     float3 N = GetNormal(p);
-                    float3 L = normalize(float3(1, 1, 1));
+                    float3 L = normalize(float3(3, 5, 1));
                     float3 V = normalize(ro - p);
                     float3 H = normalize(L + V);
 
                     // LIGHTING
-                    float3 albedo = float3(1.0, 1.0, 1.0);
+                    float3 albedo = float3(0.7, 0.7, 0.7);
                     float diff = saturate(dot(N, L));
                     float3 spec = pow(saturate(dot(N, H)), 70.0) * (diff > 0);
 
                     color.rgb = albedo * diff + spec;
 
                     // SHADOWS
-                    float rayToLightLength = RayMarch(p + N * SURF_DIST * 8.0, L);
+                    float rayToLightLength = RayMarch(p + N * SURF_DIST * 2.0, L);
                     color *= !(rayToLightLength < MAX_DIST);
 
                     // AMBIENT
