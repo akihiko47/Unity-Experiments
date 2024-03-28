@@ -55,17 +55,24 @@ Shader "RayMarching/RayMarchOperations" {
 
                 float3 bP = p - float3(0, 1, 0);  // Translate
                 bP.xz = mul(Rot(_Time.y), bP.xz);  // Rotate around axis
-                float dB = sdBox(bP, float3(0.5, 0.5, 0.5));
+                float dBox = sdBox(bP, float3(0.5, 0.5, 0.5));
 
                 float3 sp = p - float3(3, 1, 0);
                 sp *= float3(1.0, 4.0, 1.0);  // Scale
                 float dS = length(sp) - 1.0;
                 dS = dS / 4.0;  // ! Scale compensation !
 
+                float3 bp = p - float3(6.0, 1.0, 0.0);  // main object point
+                float3 ap = bp - float3(sin(_Time.y) * 0.5, 0.0, 0.0);  // sub object point
+                float dB = sdBox(bp, float3(0.5, 0.5, 0.5)); // Object B (main)
+                float dA = length(ap) - 0.6;  // Object A (sub)
+                float dSub = max(-dA, dB);  // Subtraction
+
                 float dP = p.y;
 
-                float d = min(dB, dP);
+                float d = min(dBox, dP);
                 d = min(d, dS);
+                d = min(d, dSub);
                 return d;
             }
 
@@ -118,7 +125,7 @@ Shader "RayMarching/RayMarchOperations" {
 
                 float dist = RayMarch(ro, rd);
 
-                float3 color = float3(0.43, 0.83, 1.0);
+                float3 color = float3(0.18, 0.49, 1.0);
                 if (dist < MAX_DIST) {
                     float3 p = ro + rd * dist;
 
@@ -127,23 +134,23 @@ Shader "RayMarching/RayMarchOperations" {
                     float3 V = normalize(ro - p);
                     float3 H = normalize(L + V);
 
+                    // SHADOWS
+                    float rayToLightLength = RayMarch(p + N * SURF_DIST * 2.0, L);
+                    float attenuation = !(rayToLightLength < MAX_DIST);
+
                     // LIGHTING
-                    float3 albedo = float3(0.7, 0.7, 0.7);
-                    float diff = saturate(dot(N, L));
-                    float3 spec = pow(saturate(dot(N, H)), 70.0) * (diff > 0);
+                    float3 albedo = float3(0.3, 0.3, 0.3);
+                    float3 ambient = float3(0.01, 0.02, 0.05);
+
+                    float3 diff = saturate(dot(N, L)) * attenuation;
+                    diff += ambient;
+
+                    float3 spec = pow(saturate(dot(N, H)), 70.0) * (diff > 0) * attenuation;
 
                     color.rgb = albedo * diff + spec;
 
-                    // SHADOWS
-                    float rayToLightLength = RayMarch(p + N * SURF_DIST * 2.0, L);
-                    color *= !(rayToLightLength < MAX_DIST);
-
-                    // AMBIENT
-                    float3 ambient = float3(0, 0.02, 0.05);
-                    color += ambient;
-
                     // FOG
-                    float3 fogColor = float3(0.43, 0.83, 1.0);
+                    float3 fogColor = float3(0.18, 0.49, 1.0);
                     float density = 0.02;
                     float fog = pow(2, -pow((dist * density), 2));
                     color = lerp(fogColor, color, fog);
