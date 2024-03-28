@@ -33,15 +33,41 @@ Shader "Custom/CubeRayMarcher" {
                 float3 hitPos : TEXCOORD2;
             };
 
+            float sdCapsule(float3 p, float3 a, float3 b, float3 r) {
+                float3 ap = p - a;
+                float3 ab = b - a;
+
+                float t = dot(ap, ab) / dot(ab, ab);
+                t = saturate(t);
+
+                float3 c = a + t * (b - a);
+                float d = length(p - c) - r;
+
+                return d;
+            }
+
+            float sdTorus(float3 p, float R, float r) {
+                float x = length(p.xz) - R;
+                float y = p.y;
+                float d = length(float2(x, y)) - r;
+                return d;
+            }
+
+            float sdBox(float3 p, float3 R) {
+                return length(max(abs(p) - R, 0.0));
+            }
+
             float GetDist(float3 p) {
-                float d = length(float2(length(p.xz) - 0.5, p.y)) - 0.1;
+                //float d = sdCapsule(p, float3(0, -0.3, 0), float3(0, 0.3, 0), 0.2);
+                //float d = sdTorus(p, 0.3, 0.1);
+                float d = sdBox(p, float3(0.3, 0.3, 0.3)) - 0.1;
 
                 return d;
             }
 
             float3 GetNormal(float3 pnt) {
                 float d = GetDist(pnt);
-                float2 e = float2(0.01, 0.0);
+                float2 e = float2(0.001, 0.0);
 
                 float3 n = d - float3(GetDist(pnt - e.xyy),
                                       GetDist(pnt - e.yxy),
@@ -83,14 +109,23 @@ Shader "Custom/CubeRayMarcher" {
                 float2 dB = abs(uv) - b;
                 float mask = length(max(dB, 0.0) + min(max(dB.x, dB.y), 0.0)) < 0.2;
 
+
+                // IF WE HIT SOMETHING
                 float3 col = float3(0.0, 0.0, 0.0);
                 if (d < MAX_DIST) {
                     float3 p = ro + rd * d;
                     float3 N = GetNormal(p);
-                    col = N;
+                    float3 L = normalize(float3(1, 1, 1));
+                    float3 V = normalize(ro - p);
+
+                    // LIGHTING
+                    float3 ambient = float3(0, 0.02, 0.05);
+                    float diff = saturate(dot(N, L));
+
+                    col = diff + ambient;
                 }
 
-                col = lerp(mask, col, 1-mask);
+                //col = lerp(mask, col, 1-mask);
 
                 return float4(col, 1.0);
             }
