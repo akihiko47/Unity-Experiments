@@ -68,11 +68,18 @@ Shader "RayMarching/RayMarchOperations" {
                 float dA = length(ap) - 0.6;  // Object A (sub)
                 float dSub = max(-dA, dB);  // Subtraction
 
+                float3 cp = p - float3(8.0, 1.0, 0.0);  // main object point
+                float3 dp = cp - float3(sin(_Time.y) * 0.5, 0.0, 0.0);  // add object point
+                float dC = sdBox(cp, float3(0.5, 0.5, 0.5)); // Object B (main)
+                float dD = length(dp) - 0.6;  // Object A (add)
+                float dAdd = max(dC, dD);  // Intersection
+
                 float dP = p.y;
 
                 float d = min(dBox, dP);
                 d = min(d, dS);
                 d = min(d, dSub);
+                d = min(d, dAdd);
                 return d;
             }
 
