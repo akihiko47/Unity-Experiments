@@ -49,6 +49,26 @@ Shader "RayMarching/RayMarchOperations" {
                 return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
             }
 
+            float sdTorus(float3 p, float R, float r) {
+                float x = length(p.xz) - R;
+                float y = p.y;
+                float d = length(float2(x, y)) - r;
+                return d;
+            }
+
+            float sdCapsule(float3 p, float3 a, float3 b, float3 r) {
+                float3 ap = p - a;
+                float3 ab = b - a;
+
+                float t = dot(ap, ab) / dot(ab, ab);
+                t = saturate(t);
+
+                float3 c = a + t * (b - a);
+                float d = length(p - c) - r;
+
+                return d;
+            }
+
             float GetDist(float3 p) {
                 //float4 sphere = float4(1.0, 1.0, 1.0, 0.5);
                 //float dS = length(p - sphere.xyz) - sphere.w;
@@ -74,12 +94,19 @@ Shader "RayMarching/RayMarchOperations" {
                 float dD = length(dp) - 0.6;  // Object A (add)
                 float dAdd = max(dC, dD);  // Intersection
 
+                float3 ep = p - float3(10.0, 1.0, 0.0);  // obj1 object point
+                float3 fp = ep;  // obj2 object point
+                float dE = sdBox(ep, float3(0.5, 0.5, 0.5)); // Object E
+                float dF = sdCapsule(fp, float3(0, -0.5, 0), float3(0, 0.5, 0), 0.5);  // Object F
+                float dLerp = lerp(dE, dF, sin(_Time.y) * 0.5 + 0.5);  // Lerping
+
                 float dP = p.y;
 
                 float d = min(dBox, dP);
                 d = min(d, dS);
                 d = min(d, dSub);
                 d = min(d, dAdd);
+                d = min(d, dLerp);
                 return d;
             }
 
