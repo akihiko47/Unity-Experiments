@@ -100,6 +100,12 @@ Shader "RayMarching/RayMarchOperations" {
                 float dF = sdCapsule(fp, float3(0, -0.5, 0), float3(0, 0.5, 0), 0.5);  // Object F
                 float dLerp = lerp(dE, dF, sin(_Time.y) * 0.5 + 0.5);  // Lerping
 
+                float3 cutBoxP = p - float3(12.0, 1.0, 0.0);
+                float cutBoxD = sdBox(cutBoxP, float3(0.5, 0.5, 0.5));
+                cutBoxD = abs(cutBoxD) - 0.05;
+                float cutPlaneD = dot(cutBoxP, normalize(float3(-1.0, 1.0, -1.0)));  // Rotating and moving plane
+                float shellBoxD = max(cutPlaneD, cutBoxD);  // Cutting with plane
+
                 float dP = p.y;
 
                 float d = min(dBox, dP);
@@ -107,6 +113,8 @@ Shader "RayMarching/RayMarchOperations" {
                 d = min(d, dSub);
                 d = min(d, dAdd);
                 d = min(d, dLerp);
+                d = min(d, shellBoxD);
+
                 return d;
             }
 
@@ -163,7 +171,7 @@ Shader "RayMarching/RayMarchOperations" {
                 if (dist < MAX_DIST) {
                     float3 p = ro + rd * dist;
 
-                    float3 lightPos = float3(5.0, 10.0, 10.0);
+                    float3 lightPos = float3(5.0, 10.0, -10.0);
 
                     float3 N = GetNormal(p);
                     float3 L = normalize(lightPos - p);
