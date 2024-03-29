@@ -17,6 +17,8 @@ Shader "RayMarching/RayMarchOperations" {
             #define MAX_DIST 500.0
             #define SURF_DIST 0.001
 
+            #define POWER 8.0
+
             #include "UnityCG.cginc"
 
             sampler2D _MainTex;
@@ -42,6 +44,64 @@ Shader "RayMarching/RayMarchOperations" {
                 float s = sin(a);
                 float c = cos(a);
                 return float2x2(c, -s, s, c);
+            }
+
+            // Noise 2 input, 1 output
+            float N21(float2 p) {
+                return frac(sin(p.x * 125.0 + p.y * 412.0) * 6745.0);
+            }
+
+            float SmoothNoise(float2 uv) {
+                float2 lv = frac(uv);
+                float2 id = floor(uv);
+
+                lv = lv * lv * (3.0 - 2.0 * lv);  // Iterpolation (smoothstep)
+
+                float bl = N21(id);
+                float br = N21(id + float2(1.0, 0.0));
+                float b = lerp(bl, br, lv.x);
+
+                float tl = N21(id + float2(0.0, 1.0));
+                float tr = N21(id + float2(1.0, 1.0));
+                float t = lerp(tl, tr, lv.x);
+
+                return lerp(b, t, lv.y);
+            }
+
+            float SmoothNoise2(float2 uv) {
+                float c = SmoothNoise(uv.xy * 4.0);
+                c += SmoothNoise(uv.xy * 8.0) * 0.5;
+                c += SmoothNoise(uv.xy * 16.0) * 0.25;
+                c += SmoothNoise(uv.xy * 32.0) * 0.125;
+                c += SmoothNoise(uv.xy * 64.0) * 0.0625;
+
+                return c *= 0.5;
+            }
+
+            float sdFractal(float3 pos) {
+                float3 z = pos;
+                float dr = 1.0;
+                float r = 0.0;
+                for (int i = 0; i < 16; i++)
+                {
+                    r = length(z);
+                    if (r > 1.5) break;
+
+                    // convert to polar coordinates
+                    float theta = acos(z.z / r);
+                    float phi = atan(float2(z.y, z.x));
+
+                    dr = pow(r, POWER - 1.0) * POWER * dr + 1.0;
+
+                    // scale and rotate the point
+                    float zr = pow(r, POWER);
+                    theta = theta * POWER;
+                    phi = phi * POWER;
+
+                    // convert back to cartesian coordinates
+                    z = pos + zr * float3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta));
+                }
+                return 0.5 * log(r) * r / dr;
             }
 
             float sdBox(float3 p, float3 b) {
@@ -114,12 +174,31 @@ Shader "RayMarching/RayMarchOperations" {
 
                 
                 float3 scBoxP = p - float3(16.0, 1.0, 0.0);
+                scBoxP.x = abs(scBoxP.x);  // Mirroring
                 float scale = lerp(1.0, 3.0, smoothstep(-0.5, 0.5, scBoxP.y));  // Controlled scaling
                 scBoxP.xz *= scale;
                 scBoxP.xz = mul(Rot(scBoxP.y * 2.0 + _Time.y), scBoxP.xz);  // Twisting
                 float scBoxD = sdBox(scBoxP, float3(0.5, 0.5, 0.5)) / scale;
 
+                float3 mBoxP = p - float3(18.0, 1.0, 0.0);
+                float3 n = normalize(float3(-1.0, 1.0, -1.0));  // Folding around needed plane
+                mBoxP -= 2.0 * n * min(dot(mBoxP, n), 0.0);  // Folding around needed plane
+                mBoxP.xz *= 4.0;
+                float mBoxD = sdBox(mBoxP, float3(0.5, 0.5, 0.5)) / 4.0;
+
+
+                float3 fractalP = p - float3(20.0, 1.0, 0.0);
+                fractalP;
+                float fractalD = sdFractal(fractalP);
+
+
                 float dP = p.y;
+                //float c = SmoothNoise2(p.xz * 0.001);
+                //float c2 = SmoothNoise2(p.xz * 0.1);
+                //float c3 = SmoothNoise2(p.xz * 1);
+                //dP -= c * 100;
+                //dP -= c2 * 1;
+                //dP -= c3 * 0.1;
 
                 float d = min(dBox, dP);
                 d = min(d, dS);
@@ -129,6 +208,8 @@ Shader "RayMarching/RayMarchOperations" {
                 d = min(d, shellBoxD);
                 d = min(d, disBoxD);
                 d = min(d, scBoxD);
+                d = min(d, mBoxD);
+                d = min(d, fractalD);
 
                 return d;
             }
@@ -144,13 +225,15 @@ Shader "RayMarching/RayMarchOperations" {
                 return normalize(n);
             }
 
-            float RayMarch(float3 ro, float3 rd) {
+            float RayMarch(float3 ro, float3 rd, out float steps) {
                 float dO = 0.0;
+                steps = 0.0;
 
                 for (int i = 0; i < MAX_STEPS; i++) {
                     float3 p = ro + rd * dO;
                     float dS = GetDist(p);
                     dO += dS;
+                    steps += 1;
                     if (abs(dS) < SURF_DIST || dO > MAX_DIST) {
                         break;
                     }
@@ -179,8 +262,9 @@ Shader "RayMarching/RayMarchOperations" {
                 // MARCHING
                 float3 ro = _CameraWorldPos;
                 float3 rd = normalize(i.ray);
+                float steps = 0.0;
 
-                float dist = RayMarch(ro, rd);
+                float dist = RayMarch(ro, rd, steps);
 
                 float3 color = float3(0.18, 0.49, 1.0);
                 if (dist < MAX_DIST) {
@@ -194,7 +278,8 @@ Shader "RayMarching/RayMarchOperations" {
                     float3 H = normalize(L + V);
 
                     // SHADOWS
-                    float rayToLightLength = RayMarch(p + N * SURF_DIST * 2.0, L);
+                    float s;
+                    float rayToLightLength = RayMarch(p + N * SURF_DIST * 2.0, L, s);
                     float attenuation = !(rayToLightLength < MAX_DIST);
 
                     // LIGHTING
@@ -208,6 +293,13 @@ Shader "RayMarching/RayMarchOperations" {
 
                     color.rgb = albedo * diff + spec;
 
+
+                    // AO
+                    float ao = steps * 0.01;
+                    ao = 1 - ao / (ao + 1.0);
+                    ao = pow(ao, 2.0);
+                    color *= ao;
+
                     // FOG
                     //float3 fogColor = float3(0.18, 0.49, 1.0);
                     
@@ -215,10 +307,11 @@ Shader "RayMarching/RayMarchOperations" {
                     float3  fogColor = lerp(
                         float3(0.5, 0.6, 0.7), // blue
                         float3(1.0, 0.9, 0.7), // yellow
-                        pow(sunAmount, 2.0));
+                        pow(sunAmount, 8.0));
                     float density = 0.02;
                     float fog = pow(2, -pow((dist * density), 2));
                     color = lerp(fogColor, color, fog);
+
 
                 }
 
