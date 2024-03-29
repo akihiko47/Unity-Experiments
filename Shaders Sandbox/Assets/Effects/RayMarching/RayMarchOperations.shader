@@ -14,7 +14,7 @@ Shader "RayMarching/RayMarchOperations" {
             #pragma fragment frag
 
             #define MAX_STEPS 100
-            #define MAX_DIST 100.0
+            #define MAX_DIST 500.0
             #define SURF_DIST 0.001
 
             #include "UnityCG.cginc"
@@ -102,9 +102,22 @@ Shader "RayMarching/RayMarchOperations" {
 
                 float3 cutBoxP = p - float3(12.0, 1.0, 0.0);
                 float cutBoxD = sdBox(cutBoxP, float3(0.5, 0.5, 0.5));
-                cutBoxD = abs(cutBoxD) - 0.05;
+                cutBoxD = abs(cutBoxD) - 0.05;  // Shell
                 float cutPlaneD = dot(cutBoxP, normalize(float3(-1.0, 1.0, -1.0)));  // Rotating and moving plane
                 float shellBoxD = max(cutPlaneD, cutBoxD);  // Cutting with plane
+
+                float3 disBoxP = p - float3(14.0, 1.0, 0.0);
+                float disBoxD = sdBox(disBoxP, float3(0.5, 0.5, 0.5));
+                disBoxD -= sin(p.x * 10.0 + _Time.y * 4.0) * 0.02;  // Displacement
+                disBoxD -= sin(p.y * 10.0 + _Time.y * 4.0) * 0.02;  // Displacement
+                disBoxD -= sin(p.z * 10.0 + _Time.y * 4.0) * 0.02;  // Displacement
+
+                
+                float3 scBoxP = p - float3(16.0, 1.0, 0.0);
+                float scale = lerp(1.0, 3.0, smoothstep(-0.5, 0.5, scBoxP.y));  // Controlled scaling
+                scBoxP.xz *= scale;
+                scBoxP.xz = mul(Rot(scBoxP.y * 2.0 + _Time.y), scBoxP.xz);  // Twisting
+                float scBoxD = sdBox(scBoxP, float3(0.5, 0.5, 0.5)) / scale;
 
                 float dP = p.y;
 
@@ -114,6 +127,8 @@ Shader "RayMarching/RayMarchOperations" {
                 d = min(d, dAdd);
                 d = min(d, dLerp);
                 d = min(d, shellBoxD);
+                d = min(d, disBoxD);
+                d = min(d, scBoxD);
 
                 return d;
             }
@@ -136,7 +151,7 @@ Shader "RayMarching/RayMarchOperations" {
                     float3 p = ro + rd * dO;
                     float dS = GetDist(p);
                     dO += dS;
-                    if (dS < SURF_DIST || dO > MAX_DIST) {
+                    if (abs(dS) < SURF_DIST || dO > MAX_DIST) {
                         break;
                     }
                 }
@@ -171,7 +186,7 @@ Shader "RayMarching/RayMarchOperations" {
                 if (dist < MAX_DIST) {
                     float3 p = ro + rd * dist;
 
-                    float3 lightPos = float3(5.0, 10.0, -10.0);
+                    float3 lightPos = float3(540.0, 785.0, -1120.0);
 
                     float3 N = GetNormal(p);
                     float3 L = normalize(lightPos - p);
@@ -194,7 +209,13 @@ Shader "RayMarching/RayMarchOperations" {
                     color.rgb = albedo * diff + spec;
 
                     // FOG
-                    float3 fogColor = float3(0.18, 0.49, 1.0);
+                    //float3 fogColor = float3(0.18, 0.49, 1.0);
+                    
+                    float sunAmount = max(dot(rd, L), 0.0);
+                    float3  fogColor = lerp(
+                        float3(0.5, 0.6, 0.7), // blue
+                        float3(1.0, 0.9, 0.7), // yellow
+                        pow(sunAmount, 2.0));
                     float density = 0.02;
                     float fog = pow(2, -pow((dist * density), 2));
                     color = lerp(fogColor, color, fog);
